@@ -1,27 +1,19 @@
 export const MUSCLE_GROUPS = [
-  'Brust',
-  'Rücken',
-  'Schultern',
-  'Bizeps',
-  'Trizeps',
-  'Unterarme',
-  'Bauch',
-  'Quadrizeps',
-  'Beinbeuger',
-  'Gesäß',
-  'Waden',
+  'Chest',
+  'Back',
+  'Shoulders',
+  'Biceps',
+  'Triceps',
+  'Forearms',
+  'Abs',
+  'Quads',
+  'Hamstrings',
+  'Glutes',
+  'Calves',
 ] as const
 export type MuscleGroup = (typeof MUSCLE_GROUPS)[number]
 
-export const EQUIPMENT = [
-  'Langhantel',
-  'Kurzhantel',
-  'Kabel',
-  'Maschine',
-  'SZ-Stange',
-  'Körpergewicht',
-  'Sonstiges',
-] as const
+export const EQUIPMENT = ['Barbell', 'Dumbbell', 'Cable', 'Machine', 'EZ-Bar', 'Bodyweight', 'Other'] as const
 export type Equipment = (typeof EQUIPMENT)[number]
 
 export interface Exercise {
@@ -32,7 +24,7 @@ export interface Exercise {
   equipment: Equipment
   /** Weight is optional for these (pull-ups, dips, plank …). */
   bodyweight: boolean
-  /** Reps field means seconds (plank). Only changes labels. */
+  /** The reps field means seconds (plank). Only changes labels. */
   timed?: boolean
   /** true for user-created exercises (stored in IndexedDB). */
   custom?: boolean
@@ -55,7 +47,26 @@ export interface Workout {
   date: string
   /** Unix ms; breaks ties between workouts on the same day. */
   createdAt: number
+  /** Custom session name. Missing/empty = the name is generated from the muscles trained. */
+  name?: string
   entries: WorkoutEntry[]
 }
 
 export type PRType = 'weight' | 'reps' | 'e1rm' | 'bodyweightReps'
+
+/** Occasional body-weight measurement (kg). */
+export interface BodyWeightEntry {
+  id: string
+  date: string
+  kg: number
+}
+
+/** A progress photo. Both blobs are JPEGs (downscaled in the browser before saving). */
+export interface ProgressPhoto {
+  id: string
+  date: string
+  createdAt: number
+  note?: string
+  full: Blob
+  thumb: Blob
+}

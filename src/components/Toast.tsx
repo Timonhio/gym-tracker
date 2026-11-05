@@ -11,10 +11,11 @@ type ShowToast = (message: string, kind?: Kind) => void
 const ToastContext = createContext<ShowToast>(() => {})
 export const useToast = () => useContext(ToastContext)
 
-const STYLE: Record<Kind, string> = {
-  info: 'bg-slate-800 text-white dark:bg-slate-100 dark:text-slate-900',
-  pr: 'bg-amber-400 text-slate-900',
-  error: 'bg-red-600 text-white',
+// One calm look; a small colored dot tells the kinds apart.
+const DOT: Record<Kind, string> = {
+  info: 'bg-slate-400',
+  pr: 'bg-[var(--accent-solid)]',
+  error: 'bg-red-500',
 }
 
 export function ToastProvider({ children }: { children: ReactNode }) {
@@ -42,9 +43,9 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         {items.map((t) => (
           <div
             key={t.id}
-            className={`pointer-events-auto w-full max-w-md rounded-xl px-4 py-3 text-sm font-semibold shadow-lg ${STYLE[t.kind]}`}
+            className="pointer-events-auto flex w-full max-w-md items-center gap-3 rounded-full bg-slate-900 px-5 py-3 text-sm font-medium text-white shadow-xl ring-1 ring-white/10 dark:bg-slate-800"
           >
-            {t.kind === 'pr' && <span className="mr-1">🏆</span>}
+            <span className={`size-2.5 shrink-0 rounded-full ${DOT[t.kind]}`} />
             {t.message}
           </div>
         ))}

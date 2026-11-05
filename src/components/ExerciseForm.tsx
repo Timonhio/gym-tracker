@@ -1,7 +1,7 @@
 import { useState } from 'react'
+import { uid } from '../lib/format'
 import { normalize } from '../lib/search'
 import { EQUIPMENT, MUSCLE_GROUPS, type Equipment, type Exercise, type MuscleGroup } from '../lib/types'
-import { uid } from '../lib/format'
 import { Modal } from './Modal'
 
 /** Create or edit a custom exercise. */
@@ -17,9 +17,9 @@ export function ExerciseForm({
   onClose: () => void
 }) {
   const [name, setName] = useState(initial?.name ?? '')
-  const [primary, setPrimary] = useState<MuscleGroup>(initial?.primary ?? 'Brust')
+  const [primary, setPrimary] = useState<MuscleGroup>(initial?.primary ?? 'Chest')
   const [secondary, setSecondary] = useState<MuscleGroup[]>(initial?.secondary ?? [])
-  const [equipment, setEquipment] = useState<Equipment>(initial?.equipment ?? 'Kurzhantel')
+  const [equipment, setEquipment] = useState<Equipment>(initial?.equipment ?? 'Dumbbell')
   const [bodyweight, setBodyweight] = useState(initial?.bodyweight ?? false)
   const [timed, setTimed] = useState(initial?.timed ?? false)
   const [error, setError] = useState('')
@@ -30,16 +30,16 @@ export function ExerciseForm({
 
   function submit() {
     const trimmed = name.trim()
-    if (!trimmed) return setError('Bitte gib einen Namen ein.')
+    if (!trimmed) return setError('Please enter a name.')
     const clash = catalog.some((e) => e.id !== initial?.id && normalize(e.name) === normalize(trimmed))
-    if (clash) return setError('Eine Übung mit diesem Namen gibt es schon.')
+    if (clash) return setError('An exercise with this name already exists.')
     onSave({
       id: initial?.id ?? `custom-${uid()}`,
       name: trimmed,
       primary,
       secondary: secondary.filter((g) => g !== primary),
       equipment,
-      bodyweight: bodyweight || equipment === 'Körpergewicht',
+      bodyweight: bodyweight || equipment === 'Bodyweight',
       ...(timed ? { timed: true } : {}),
       custom: true,
     })
@@ -47,22 +47,22 @@ export function ExerciseForm({
 
   return (
     <Modal
-      title={initial ? 'Übung bearbeiten' : 'Eigene Übung'}
+      title={initial ? 'Edit exercise' : 'Custom exercise'}
       onClose={onClose}
       footer={
         <button className="btn-primary w-full" onClick={submit}>
-          Speichern
+          Save
         </button>
       }
     >
-      <div className="space-y-4 pt-2">
+      <div className="space-y-5 pt-1">
         <div>
           <label className="label" htmlFor="ex-name">Name</label>
-          <input id="ex-name" className="field" value={name} onChange={(e) => setName(e.target.value)} placeholder="z. B. Kabel-Flys" autoFocus />
+          <input id="ex-name" className="field" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Cable Fly" autoFocus />
         </div>
 
         <div>
-          <label className="label" htmlFor="ex-primary">Hauptmuskelgruppe</label>
+          <label className="label" htmlFor="ex-primary">Primary muscle group</label>
           <select id="ex-primary" className="field" value={primary} onChange={(e) => setPrimary(e.target.value as MuscleGroup)}>
             {MUSCLE_GROUPS.map((g) => (
               <option key={g}>{g}</option>
@@ -71,7 +71,7 @@ export function ExerciseForm({
         </div>
 
         <div>
-          <span className="label">Weitere Muskelgruppen (optional)</span>
+          <span className="label">Secondary muscle groups (optional)</span>
           <div className="flex flex-wrap gap-2">
             {MUSCLE_GROUPS.filter((g) => g !== primary).map((g) => (
               <button
@@ -96,7 +96,7 @@ export function ExerciseForm({
             onChange={(e) => {
               const v = e.target.value as Equipment
               setEquipment(v)
-              if (v === 'Körpergewicht') setBodyweight(true)
+              if (v === 'Bodyweight') setBodyweight(true)
             }}
           >
             {EQUIPMENT.map((g) => (
@@ -106,15 +106,15 @@ export function ExerciseForm({
         </div>
 
         <label className="flex min-h-11 items-center gap-3">
-          <input type="checkbox" className="h-5 w-5 accent-emerald-600" checked={bodyweight} onChange={(e) => setBodyweight(e.target.checked)} />
-          <span>Körpergewichtsübung <span className="text-slate-500">(Gewicht optional)</span></span>
+          <input type="checkbox" className="size-5 accent-[var(--accent-solid)]" checked={bodyweight} onChange={(e) => setBodyweight(e.target.checked)} />
+          <span>Bodyweight exercise <span className="text-slate-500">(weight optional)</span></span>
         </label>
         <label className="flex min-h-11 items-center gap-3">
-          <input type="checkbox" className="h-5 w-5 accent-emerald-600" checked={timed} onChange={(e) => setTimed(e.target.checked)} />
-          <span>Zeitbasiert <span className="text-slate-500">(Sekunden statt Wdh.)</span></span>
+          <input type="checkbox" className="size-5 accent-[var(--accent-solid)]" checked={timed} onChange={(e) => setTimed(e.target.checked)} />
+          <span>Timed <span className="text-slate-500">(seconds instead of reps)</span></span>
         </label>
 
-        {error && <p className="rounded-xl bg-red-100 px-3 py-2 text-sm font-medium text-red-700 dark:bg-red-950 dark:text-red-300">{error}</p>}
+        {error && <p className="rounded-2xl bg-red-500/10 px-4 py-3 text-sm font-medium text-red-600 dark:text-red-400">{error}</p>}
       </div>
     </Modal>
   )

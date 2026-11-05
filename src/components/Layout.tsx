@@ -1,58 +1,40 @@
 import { NavLink, Outlet } from 'react-router-dom'
-import { useData } from '../db/DataProvider'
-import { getLastBackup, isBackupStale } from '../lib/backupReminder'
-import { ChartIcon, DumbbellIcon, GearIcon, HistoryIcon, ListIcon } from './icons'
+import { ChartIcon, DumbbellIcon, HistoryIcon, ListIcon } from './icons'
 
 const TABS = [
-  { to: '/', label: 'Training', Icon: DumbbellIcon, end: true },
-  { to: '/history', label: 'Verlauf', Icon: HistoryIcon, end: false },
-  { to: '/dashboard', label: 'Dashboard', Icon: ChartIcon, end: false },
-  { to: '/exercises', label: 'Übungen', Icon: ListIcon, end: false },
+  { to: '/', label: 'Train', Icon: DumbbellIcon, end: true },
+  { to: '/history', label: 'History', Icon: HistoryIcon, end: false },
+  { to: '/dashboard', label: 'Progress', Icon: ChartIcon, end: false },
+  { to: '/exercises', label: 'Exercises', Icon: ListIcon, end: false },
 ]
 
 export default function Layout() {
-  const { workouts } = useData()
-  const backupDue = isBackupStale(workouts.length, getLastBackup())
   return (
-    <div className="mx-auto min-h-dvh max-w-xl">
-      <header
-        className="sticky top-0 z-30 flex items-center justify-between bg-slate-100/90 px-4 pb-2 backdrop-blur dark:bg-slate-950/90"
-        style={{ paddingTop: 'calc(env(safe-area-inset-top) + 0.5rem)' }}
-      >
-        <span className="text-sm font-bold tracking-wide text-emerald-600 uppercase dark:text-emerald-400">Gym Tracker</span>
-        <NavLink
-          to="/settings"
-          aria-label={backupDue ? 'Einstellungen – Sicherung fällig' : 'Einstellungen'}
-          className={({ isActive }) =>
-            `btn-ghost relative !min-h-10 !px-2 ${isActive ? '!text-emerald-600 dark:!text-emerald-400' : ''}`
-          }
-        >
-          <GearIcon />
-          {backupDue && <span className="absolute top-1.5 right-1 h-2.5 w-2.5 rounded-full bg-amber-500" title="Zeit für eine Sicherung" />}
-        </NavLink>
-      </header>
-
-      <main className="px-4 pt-2 pb-40">
+    <div className="mx-auto min-h-dvh max-w-xl" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+      <main className="px-4 pt-5 pb-44">
         <Outlet />
       </main>
 
+      {/* floating pill navigation */}
       <nav
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 backdrop-blur dark:border-slate-800 dark:bg-slate-900/95"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+        className="pointer-events-none fixed inset-x-0 bottom-0 z-40 px-5"
+        style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 0.75rem)' }}
       >
-        <ul className="mx-auto flex max-w-xl">
+        <ul className="pointer-events-auto mx-auto flex max-w-sm gap-1 rounded-full border border-black/5 bg-white/90 p-1.5 shadow-lg backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/90">
           {TABS.map(({ to, label, Icon, end }) => (
             <li key={to} className="flex-1">
               <NavLink
                 to={to}
                 end={end}
                 className={({ isActive }) =>
-                  `flex h-16 flex-col items-center justify-center gap-0.5 text-xs font-medium ${
-                    isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'
+                  `flex h-14 flex-col items-center justify-center gap-0.5 rounded-full text-[11px] font-medium transition-colors ${
+                    isActive
+                      ? 'bg-slate-200 text-slate-900 dark:bg-white/10 dark:text-white [&_svg]:text-accent'
+                      : 'text-slate-500 dark:text-slate-400'
                   }`
                 }
               >
-                <Icon />
+                <Icon className="h-6 w-6" />
                 {label}
               </NavLink>
             </li>

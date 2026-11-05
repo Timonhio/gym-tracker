@@ -16,6 +16,8 @@ export interface DraftEntry {
   sets: DraftSet[]
 }
 export interface Draft {
+  /** Custom session name; '' = use the generated name. */
+  name: string
   date: string
   entries: DraftEntry[]
 }
@@ -66,7 +68,8 @@ export function draftToWorkout(
       sets: e.sets.map(toSetEntry).filter((s) => isValidSet(s, isBodyweight(e.exerciseId))),
     }))
     .filter((e) => e.sets.length > 0)
-  return { id, date: draft.date, createdAt, entries }
+  const name = draft.name.trim()
+  return { id, date: draft.date, createdAt, ...(name ? { name } : {}), entries }
 }
 
 /** Ids of sets that are filled in only partly (e.g. reps but no weight). */
@@ -82,13 +85,14 @@ export function incompleteSetIds(draft: Draft, isBodyweight: (exerciseId: string
 
 export function workoutToDraft(w: Workout): Draft {
   return {
+    name: w.name ?? '',
     date: w.date,
     entries: w.entries.map((e) => ({
       exerciseId: e.exerciseId,
       sets: e.sets.map((s) => ({
         id: s.id,
         reps: s.reps === null ? '' : String(s.reps),
-        weight: s.weight === null ? '' : String(s.weight).replace('.', ','),
+        weight: s.weight === null ? '' : String(s.weight),
       })),
     })),
   }

@@ -26,25 +26,25 @@ interface Plan {
 }
 
 const PUSH: Plan[] = [
-  { id: 'bankdruecken', start: 70, gain: 0.75, reps: 8, sets: 4 },
-  { id: 'kh-schraegbankdruecken', start: 24, gain: 0.25, reps: 10, sets: 3 },
-  { id: 'schulterdruecken', start: 40, gain: 0.5, reps: 8, sets: 3 },
-  { id: 'seitheben', start: 8, gain: 0.1, reps: 12, sets: 3 },
-  { id: 'trizepsdruecken', start: 25, gain: 0.4, reps: 12, sets: 3 },
+  { id: 'bench-press', start: 70, gain: 0.75, reps: 8, sets: 4 },
+  { id: 'incline-dumbbell-press', start: 24, gain: 0.25, reps: 10, sets: 3 },
+  { id: 'overhead-press', start: 40, gain: 0.5, reps: 8, sets: 3 },
+  { id: 'lateral-raise', start: 8, gain: 0.1, reps: 12, sets: 3 },
+  { id: 'triceps-pushdown', start: 25, gain: 0.4, reps: 12, sets: 3 },
 ]
 const PULL: Plan[] = [
-  { id: 'klimmzuege', start: 0, gain: 0, reps: 7, sets: 4 },
-  { id: 'rudern-langhantel', start: 60, gain: 0.7, reps: 8, sets: 4 },
-  { id: 'latzug', start: 55, gain: 0.5, reps: 10, sets: 3 },
+  { id: 'pull-ups', start: 0, gain: 0, reps: 7, sets: 4 },
+  { id: 'barbell-row', start: 60, gain: 0.7, reps: 8, sets: 4 },
+  { id: 'lat-pulldown', start: 55, gain: 0.5, reps: 10, sets: 3 },
   { id: 'face-pulls', start: 20, gain: 0.3, reps: 15, sets: 3 },
-  { id: 'bizepscurls', start: 12, gain: 0.2, reps: 10, sets: 3 },
+  { id: 'dumbbell-curl', start: 12, gain: 0.2, reps: 10, sets: 3 },
 ]
 const LEGS: Plan[] = [
-  { id: 'kniebeugen', start: 80, gain: 1.25, reps: 6, sets: 4 },
-  { id: 'rumaenisches-kreuzheben', start: 80, gain: 1, reps: 8, sets: 3 },
-  { id: 'beinpresse', start: 160, gain: 2.5, reps: 10, sets: 3 },
-  { id: 'beinbeuger-liegend', start: 40, gain: 0.5, reps: 12, sets: 3 },
-  { id: 'wadenheben-stehend', start: 60, gain: 1, reps: 15, sets: 4 },
+  { id: 'squat', start: 80, gain: 1.25, reps: 6, sets: 4 },
+  { id: 'romanian-deadlift', start: 80, gain: 1, reps: 8, sets: 3 },
+  { id: 'leg-press', start: 160, gain: 2.5, reps: 10, sets: 3 },
+  { id: 'lying-leg-curl', start: 40, gain: 0.5, reps: 12, sets: 3 },
+  { id: 'standing-calf-raise', start: 60, gain: 1, reps: 15, sets: 4 },
 ]
 
 const round25 = (n: number) => Math.round(n / 2.5) * 2.5

@@ -9,10 +9,10 @@ type Lookup = (id: string) => Exercise
 
 export type RangeKey = '4w' | '3m' | '1y' | 'all'
 export const RANGES: { key: RangeKey; label: string; days: number | null }[] = [
-  { key: '4w', label: '4 Wochen', days: 28 },
-  { key: '3m', label: '3 Monate', days: 91 },
-  { key: '1y', label: '1 Jahr', days: 365 },
-  { key: 'all', label: 'Alles', days: null },
+  { key: '4w', label: '4 weeks', days: 28 },
+  { key: '3m', label: '3 months', days: 91 },
+  { key: '1y', label: '1 year', days: 365 },
+  { key: 'all', label: 'All', days: null },
 ]
 const daysOf = (r: RangeKey) => RANGES.find((x) => x.key === r)!.days
 
@@ -161,7 +161,7 @@ export function exerciseRanking(workouts: Workout[], lookup: Lookup): RankedExer
       map.set(e.exerciseId, r)
     }
   }
-  return [...map.values()].sort((a, b) => b.workouts - a.workouts || b.sets - a.sets || a.name.localeCompare(b.name, 'de'))
+  return [...map.values()].sort((a, b) => b.workouts - a.workouts || b.sets - a.sets || a.name.localeCompare(b.name, 'en'))
 }
 
 /** Valid sets per PRIMARY muscle group. */
@@ -210,9 +210,9 @@ export interface MovementBalance {
 }
 /** Sets by movement pattern (push / pull / legs / core), via the primary muscle. */
 export function movementBalance(workouts: Workout[], lookup: Lookup): MovementBalance {
-  const counts: Record<Movement, number> = { Drücken: 0, Ziehen: 0, Beine: 0, Core: 0 }
+  const counts: Record<Movement, number> = { Push: 0, Pull: 0, Legs: 0, Core: 0 }
   for (const { muscle, sets } of setsByMuscle(workouts, lookup)) counts[MOVEMENT_OF[muscle]] += sets
-  return { counts, pushPullRatio: counts.Ziehen > 0 ? counts.Drücken / counts.Ziehen : null }
+  return { counts, pushPullRatio: counts.Pull > 0 ? counts.Push / counts.Pull : null }
 }
 
 // ---- progress & PRs ----------------------------------------------------------------

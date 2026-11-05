@@ -26,19 +26,19 @@ export function Modal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center" role="dialog" aria-modal="true" aria-label={title}>
-      <div className="absolute inset-0 bg-slate-950/60" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/70" onClick={onClose} />
       <div
-        className="relative flex max-h-[92dvh] w-full max-w-xl flex-col rounded-t-3xl bg-white shadow-xl sm:rounded-3xl dark:bg-slate-900"
+        className="relative flex max-h-[92dvh] w-full max-w-xl flex-col rounded-t-[2rem] bg-white shadow-xl sm:rounded-[2rem] dark:bg-slate-900"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
-        <div className="flex items-center justify-between px-4 pt-4 pb-2">
-          <h2 className="text-lg font-bold">{title}</h2>
-          <button className="btn-ghost !min-h-10 !px-2" onClick={onClose} aria-label="Schließen">
-            <XIcon />
+        <div className="flex items-center justify-between px-5 pt-5 pb-3">
+          <h2 className="text-xl font-bold tracking-tight">{title}</h2>
+          <button className="btn-icon" onClick={onClose} aria-label="Close">
+            <XIcon className="h-5 w-5" />
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto px-4 pb-4">{children}</div>
-        {footer && <div className="border-t border-slate-200 p-4 dark:border-slate-800">{footer}</div>}
+        <div className="flex-1 overflow-y-auto px-5 pb-5">{children}</div>
+        {footer && <div className="p-5 pt-3">{footer}</div>}
       </div>
     </div>
   )

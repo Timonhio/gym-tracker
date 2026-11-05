@@ -32,12 +32,12 @@ function png(size, fullBleed) {
     for (let x = 0; x < size; x++) {
       const px = x / s, py = y / s
       let rgba = [0, 0, 0, 0]
-      if (fullBleed || inRR(px, py, 0, 0, 512, 512, 112)) rgba = [15, 23, 42, 255]
+      if (fullBleed || inRR(px, py, 0, 0, 512, 512, 112)) rgba = [0, 0, 0, 255]
       const bar = inRR(px, py, 150, 240, 362, 272, 8)
       const plates = [
         [100, 180, 140, 332], [140, 150, 180, 362], [332, 150, 372, 362], [372, 180, 412, 332],
       ].some(([a, b, c, d]) => inRR(px, py, a, b, c, d, 14))
-      if (bar || plates) rgba = [52, 211, 153, 255]
+      if (bar || plates) rgba = [242, 138, 46, 255]
       const o = y * (size * 4 + 1) + 1 + x * 4
       raw[o] = rgba[0]; raw[o + 1] = rgba[1]; raw[o + 2] = rgba[2]; raw[o + 3] = rgba[3]
     }

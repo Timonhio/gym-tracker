@@ -7,22 +7,27 @@ export function uid(): string {
   return Math.random().toString(36).slice(2) + Date.now().toString(36)
 }
 
-/** 62.5 -> "62,5", 60 -> "60" (German decimal comma, max. 2 decimals). */
+/** 62.5 -> "62.5", 60 -> "60", 12345 -> "12,345" (max. 2 decimals). */
 export function formatNumber(n: number): string {
-  return (Math.round(n * 100) / 100).toLocaleString('de-DE', { maximumFractionDigits: 2 })
+  return (Math.round(n * 100) / 100).toLocaleString('en-US', { maximumFractionDigits: 2 })
 }
 
-/** plural(1, 'Satz', 'Sätze') -> "1 Satz", plural(3, ...) -> "3 Sätze" */
+/** plural(1, 'set', 'sets') -> "1 set", plural(3, ...) -> "3 sets" */
 export function plural(n: number, one: string, many: string): string {
-  return `${n} ${n === 1 ? one : many}`
+  return `${formatNumber(n)} ${n === 1 ? one : many}`
 }
 
 export function formatWeight(w: number): string {
   return `${formatNumber(w)} kg`
 }
 
+/** Kilograms for big totals: 234700 -> "234.7 t", 800 -> "800 kg". */
+export function formatVolume(kg: number): string {
+  return kg >= 1000 ? `${formatNumber(Math.round(kg / 100) / 10)} t` : `${formatNumber(Math.round(kg))} kg`
+}
+
 export function repsUnit(ex: Pick<Exercise, 'timed'>): string {
-  return ex.timed ? 'Sek.' : 'Wdh.'
+  return ex.timed ? 'sec' : 'reps'
 }
 
 /** Sets of one exercise as a compact string: "8 / 8 / 7 × 60 kg · 5 × 65 kg". */
@@ -46,17 +51,17 @@ export function formatSets(sets: SetEntry[], ex: Exercise): string {
 export function prLabel(type: PRType): string {
   switch (type) {
     case 'weight':
-      return 'Gewicht'
+      return 'Weight'
     case 'reps':
-      return 'Wiederholungen'
+      return 'Reps'
     case 'e1rm':
-      return 'Geschätztes 1RM'
+      return 'Est. 1RM'
     case 'bodyweightReps':
-      return 'Wiederholungen'
+      return 'Reps'
   }
 }
 
-/** Toast text, e.g. "Neuer PR! Bankdrücken: 85 kg". */
+/** Toast text, e.g. "New PR! Bench Press: 85 kg". */
 export function describePR(
   types: PRType[],
   set: { reps: number | null; weight: number | null },
@@ -66,8 +71,8 @@ export function describePR(
   const weight = set.weight ?? 0
   let detail: string
   if (types.includes('weight')) detail = formatWeight(weight)
-  else if (types.includes('reps')) detail = `${reps} ${repsUnit(ex)} bei ${formatWeight(weight)}`
+  else if (types.includes('reps')) detail = `${reps} ${repsUnit(ex)} at ${formatWeight(weight)}`
   else if (types.includes('bodyweightReps')) detail = `${reps} ${repsUnit(ex)}`
-  else detail = `geschätztes 1RM ${formatWeight(weight * (reps === 1 ? 1 : 1 + reps / 30))}`
-  return `Neuer PR! ${ex.name}: ${detail}`
+  else detail = `est. 1RM ${formatWeight(weight * (reps === 1 ? 1 : 1 + reps / 30))}`
+  return `New PR! ${ex.name}: ${detail}`
 }

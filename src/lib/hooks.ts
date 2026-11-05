@@ -15,9 +15,9 @@ export type ThemeSetting = 'system' | 'light' | 'dark'
 export function getTheme(): ThemeSetting {
   try {
     const t = localStorage.getItem('theme')
-    return t === 'light' || t === 'dark' ? t : 'system'
+    return t === 'light' || t === 'system' ? t : 'dark'
   } catch {
-    return 'system'
+    return 'dark'
   }
 }
 
@@ -29,5 +29,20 @@ export function applyTheme(theme: ThemeSetting) {
   }
   const dark = theme === 'dark' || (theme === 'system' && matchMedia('(prefers-color-scheme: dark)').matches)
   document.documentElement.classList.toggle('dark', dark)
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#0f172a' : '#f1f5f9')
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#000000' : '#efeff4')
+}
+
+/** An object URL for a Blob that is revoked again when the blob changes or the component unmounts. */
+export function useObjectUrl(blob: Blob | null | undefined): string | null {
+  const [url, setUrl] = useState<string | null>(null)
+  useEffect(() => {
+    if (!blob) {
+      setUrl(null)
+      return
+    }
+    const u = URL.createObjectURL(blob)
+    setUrl(u)
+    return () => URL.revokeObjectURL(u)
+  }, [blob])
+  return url
 }

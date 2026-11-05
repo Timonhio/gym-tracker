@@ -42,17 +42,17 @@ export function diffDays(a: Date, b: Date): number {
 }
 
 export function formatDate(iso: string): string {
-  return parseISODate(iso).toLocaleDateString('de-DE', {
+  return parseISODate(iso).toLocaleDateString('en-GB', {
     weekday: 'short',
-    day: '2-digit',
-    month: '2-digit',
+    day: 'numeric',
+    month: 'short',
     year: 'numeric',
   })
 }
 
 export function formatShortDate(iso: string): string {
-  return parseISODate(iso).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })
+  return parseISODate(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
 }
 
-export const WEEKDAYS_DE = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag']
-export const WEEKDAYS_SHORT_DE = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So']
+export const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+export const WEEKDAYS_SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']

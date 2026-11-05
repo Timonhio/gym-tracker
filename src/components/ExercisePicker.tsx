@@ -24,26 +24,26 @@ export function ExercisePicker({
 
   return (
     <Modal
-      title="Übung hinzufügen"
+      title="Add exercise"
       onClose={onClose}
       footer={
         <button className="btn-secondary w-full" onClick={onCreate}>
-          <PlusIcon className="h-5 w-5" /> Eigene Übung anlegen
+          <PlusIcon className="h-5 w-5" /> Create custom exercise
         </button>
       }
     >
-      <div className="sticky top-0 z-10 -mx-4 space-y-2 bg-white px-4 pb-2 dark:bg-slate-900">
+      <div className="sticky top-0 z-10 -mx-5 space-y-3 bg-white px-5 pb-3 dark:bg-slate-900">
         <input
           className="field"
           type="search"
-          placeholder="Suchen …"
+          placeholder="Search exercises…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           autoFocus
         />
-        <div className="-mx-4 no-scrollbar flex gap-2 overflow-x-auto px-4 pb-1">
+        <div className="no-scrollbar -mx-5 flex gap-2 overflow-x-auto px-5">
           <button className={`chip ${group === null ? 'chip-active' : ''}`} onClick={() => setGroup(null)}>
-            Alle
+            All
           </button>
           {MUSCLE_GROUPS.map((g) => (
             <button key={g} className={`chip ${group === g ? 'chip-active' : ''}`} onClick={() => setGroup(group === g ? null : g)}>
@@ -54,28 +54,28 @@ export function ExercisePicker({
       </div>
 
       {results.length === 0 ? (
-        <p className="py-8 text-center text-slate-500">Nichts gefunden. Lege eine eigene Übung an.</p>
+        <p className="py-8 text-center text-slate-500">Nothing found. Create a custom exercise.</p>
       ) : (
-        <ul className="divide-y divide-slate-100 dark:divide-slate-800">
+        <ul className="divide-y divide-slate-100 dark:divide-white/[0.06]">
           {results.map((e) => {
             const used = usedIds.has(e.id)
             return (
               <li key={e.id}>
                 <button
-                  className="flex min-h-14 w-full items-center justify-between gap-3 py-2 text-left disabled:opacity-40"
+                  className="flex min-h-16 w-full items-center justify-between gap-3 py-2 text-left disabled:opacity-40"
                   disabled={used}
                   onClick={() => onSelect(e)}
                 >
                   <span>
                     <span className="block font-semibold">
                       {e.name}
-                      {e.custom && <span className="ml-2 rounded bg-emerald-100 px-1.5 py-0.5 text-xs text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300">eigene</span>}
+                      {e.custom && <span className="tag">custom</span>}
                     </span>
-                    <span className="block text-sm text-slate-500 dark:text-slate-400">
+                    <span className="block text-sm text-slate-500">
                       {[e.primary, ...e.secondary].join(', ')} · {e.equipment}
                     </span>
                   </span>
-                  {used && <span className="text-sm text-slate-500">im Training</span>}
+                  {used && <span className="text-sm text-slate-500">in session</span>}
                 </button>
               </li>
             )

@@ -39,10 +39,12 @@ export const ListIcon = (p: P) => (
     <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
   </Icon>
 )
-export const GearIcon = (p: P) => (
+/** "Tune" icon used for settings, like the reference design. */
+export const SlidersIcon = (p: P) => (
   <Icon {...p}>
-    <circle cx="12" cy="12" r="3" />
-    <path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1" />
+    <path d="M4 7h9M19 7h1M4 17h1M11 17h9" />
+    <circle cx="16" cy="7" r="2.5" />
+    <circle cx="8" cy="17" r="2.5" />
   </Icon>
 )
 export const TrashIcon = (p: P) => (
@@ -63,5 +65,27 @@ export const PlusIcon = (p: P) => (
 export const PencilIcon = (p: P) => (
   <Icon {...p}>
     <path d="M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4" />
+  </Icon>
+)
+export const CameraIcon = (p: P) => (
+  <Icon {...p}>
+    <path d="M4 8h3l2-3h6l2 3h3v11H4z" />
+    <circle cx="12" cy="13" r="3.5" />
+  </Icon>
+)
+export const RepeatIcon = (p: P) => (
+  <Icon {...p}>
+    <path d="M17 3l3 3-3 3M20 6H8a4 4 0 0 0-4 4M7 21l-3-3 3-3M4 18h12a4 4 0 0 0 4-4" />
+  </Icon>
+)
+export const WeightIcon = (p: P) => (
+  <Icon {...p}>
+    <path d="M6 9h12l2 11H4L6 9z" />
+    <circle cx="12" cy="5.5" r="2.5" />
+  </Icon>
+)
+export const ChevronRightIcon = (p: P) => (
+  <Icon {...p}>
+    <path d="M9 6l6 6-6 6" />
   </Icon>
 )

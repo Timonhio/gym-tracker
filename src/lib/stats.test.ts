@@ -25,7 +25,7 @@ const isBw = (id: string) => lookup(id).bodyweight
 const NOW = new Date(2026, 2, 11, 12, 0, 0)
 
 let n = 0
-const wk = (date: string, exerciseId = 'bankdruecken', sets: [number, number | null][] = [[8, 60]], id = `w${++n}`): Workout => ({
+const wk = (date: string, exerciseId = 'bench-press', sets: [number, number | null][] = [[8, 60]], id = `w${++n}`): Workout => ({
   id,
   date,
   createdAt: n,
@@ -46,14 +46,14 @@ describe('ranges', () => {
 
 describe('volume', () => {
   it('sums reps x weight of valid sets only', () => {
-    const w = wk('2026-03-01', 'bankdruecken', [[10, 50], [5, 100]])
+    const w = wk('2026-03-01', 'bench-press', [[10, 50], [5, 100]])
     expect(workoutVolume(w, isBw)).toBe(1000)
   })
   it('bodyweight sets without weight add nothing', () => {
-    expect(workoutVolume(wk('2026-03-01', 'klimmzuege', [[10, null]]), isBw)).toBe(0)
+    expect(workoutVolume(wk('2026-03-01', 'pull-ups', [[10, null]]), isBw)).toBe(0)
   })
   it('computes the trend against the previous period', () => {
-    const ws = [wk('2026-03-01', 'bankdruecken', [[10, 100]]), wk('2026-01-25', 'bankdruecken', [[10, 50]])]
+    const ws = [wk('2026-03-01', 'bench-press', [[10, 100]]), wk('2026-01-25', 'bench-press', [[10, 50]])]
     const t = volumeTrend(ws, '4w', NOW, isBw)
     expect(t.current).toBe(1000)
     expect(t.previous).toBe(500)
@@ -107,27 +107,27 @@ describe('weekdayCounts', () => {
 })
 
 describe('rankings and distribution', () => {
-  const ws = [wk('2026-03-01'), wk('2026-03-03'), wk('2026-03-05', 'latzug', [[10, 40], [10, 40]])]
+  const ws = [wk('2026-03-01'), wk('2026-03-03'), wk('2026-03-05', 'lat-pulldown', [[10, 40], [10, 40]])]
   it('ranks exercises by workouts', () => {
     const r = exerciseRanking(ws, lookup)
-    expect(r[0]).toMatchObject({ exerciseId: 'bankdruecken', workouts: 2, sets: 2 })
-    expect(r[1]).toMatchObject({ exerciseId: 'latzug', workouts: 1, sets: 2 })
+    expect(r[0]).toMatchObject({ exerciseId: 'bench-press', workouts: 2, sets: 2 })
+    expect(r[1]).toMatchObject({ exerciseId: 'lat-pulldown', workouts: 1, sets: 2 })
   })
   it('counts sets per primary muscle', () => {
-    // Both have 2 sets -> fixed muscle order (Brust before Rücken).
+    // Both have 2 sets -> fixed muscle order (Chest before Back).
     expect(setsByMuscle(ws, lookup)).toEqual([
-      { muscle: 'Brust', sets: 2 },
-      { muscle: 'Rücken', sets: 2 },
+      { muscle: 'Chest', sets: 2 },
+      { muscle: 'Back', sets: 2 },
     ])
   })
   it('ignores invalid sets', () => {
-    const w = wk('2026-03-01', 'bankdruecken', [[8, null]])
+    const w = wk('2026-03-01', 'bench-press', [[8, null]])
     expect(exerciseRanking([w], lookup)).toEqual([])
     expect(setsByMuscle([w], lookup)).toEqual([])
   })
   it('balances push and pull', () => {
     const b = movementBalance(ws, lookup)
-    expect(b.counts).toMatchObject({ Drücken: 2, Ziehen: 2, Beine: 0 })
+    expect(b.counts).toMatchObject({ Push: 2, Pull: 2, Legs: 0 })
     expect(b.pushPullRatio).toBe(1)
     expect(movementBalance([wk('2026-03-01')], lookup).pushPullRatio).toBeNull()
   })
@@ -135,37 +135,37 @@ describe('rankings and distribution', () => {
 
 describe('regionRecency', () => {
   it('reports days since each region and null for never', () => {
-    const ws = [wk('2026-03-01'), wk('2026-02-20', 'kniebeugen')]
+    const ws = [wk('2026-03-01'), wk('2026-02-20', 'squat')]
     const r = Object.fromEntries(regionRecency(ws, lookup, NOW).map((x) => [x.region, x.days]))
-    expect(r.Brust).toBe(10)
-    expect(r.Beine).toBe(19)
-    expect(r.Rücken).toBeNull()
+    expect(r.Chest).toBe(10)
+    expect(r.Legs).toBe(19)
+    expect(r.Back).toBeNull()
   })
 })
 
 describe('exerciseProgress and latestPRs', () => {
   const ws = [
-    wk('2026-03-01', 'bankdruecken', [[8, 60]]),
-    wk('2026-03-03', 'bankdruecken', [[8, 60]]), // tie -> no PR
-    wk('2026-03-05', 'bankdruecken', [[5, 70], [8, 50]]),
+    wk('2026-03-01', 'bench-press', [[8, 60]]),
+    wk('2026-03-03', 'bench-press', [[8, 60]]), // tie -> no PR
+    wk('2026-03-05', 'bench-press', [[5, 70], [8, 50]]),
   ]
   const prs = computeSetPRs(ws, isBw)
   it('builds one point per workout with top weight, 1RM and PR flag', () => {
-    const p = exerciseProgress(ws, 'bankdruecken', false, prs)
+    const p = exerciseProgress(ws, 'bench-press', false, prs)
     expect(p.map((x) => x.topWeight)).toEqual([60, 60, 70])
     expect(p.map((x) => x.isPR)).toEqual([true, false, true])
     expect(p[2].e1rm).toBeCloseTo(70 * (1 + 5 / 30))
   })
   it('handles bodyweight progress', () => {
-    const w = [wk('2026-03-01', 'klimmzuege', [[8, null]]), wk('2026-03-03', 'klimmzuege', [[10, null]])]
-    const p = exerciseProgress(w, 'klimmzuege', true, computeSetPRs(w, isBw))
+    const w = [wk('2026-03-01', 'pull-ups', [[8, null]]), wk('2026-03-03', 'pull-ups', [[10, null]])]
+    const p = exerciseProgress(w, 'pull-ups', true, computeSetPRs(w, isBw))
     expect(p.map((x) => x.maxBodyweightReps)).toEqual([8, 10])
     expect(p.map((x) => x.topWeight)).toEqual([null, null])
   })
   it('lists the newest PRs first, one per exercise per workout', () => {
     const l = latestPRs(ws, prs, lookup, 5)
     expect(l.map((x) => x.date)).toEqual(['2026-03-05', '2026-03-01'])
-    expect(l[0]).toMatchObject({ exerciseName: 'Bankdrücken', weight: 70, reps: 5 })
+    expect(l[0]).toMatchObject({ exerciseName: 'Bench Press', weight: 70, reps: 5 })
   })
   it('respects the limit', () => {
     expect(latestPRs(ws, prs, lookup, 1)).toHaveLength(1)
@@ -179,7 +179,7 @@ describe('demo data', () => {
     expect(demo.every((w) => w.date <= '2026-03-11')).toBe(true)
     expect(new Set(demo.map((w) => w.id)).size).toBe(demo.length)
     expect(computeSetPRs(demo, isBw).size).toBeGreaterThan(10)
-    const legs = regionRecency(demo, lookup, NOW).find((r) => r.region === 'Beine')!
+    const legs = regionRecency(demo, lookup, NOW).find((r) => r.region === 'Legs')!
     expect(legs.days).toBeGreaterThanOrEqual(10)
   })
 })

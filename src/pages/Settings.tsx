@@ -1,25 +1,39 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { PageHeader } from '../components/PageHeader'
 import { useToast } from '../components/Toast'
 import { loadDemo, removeDemo, replaceAll, wipeAll } from '../db/actions'
 import { useData } from '../db/DataProvider'
-import { BackupError, buildBackup, parseBackup } from '../lib/backup'
-import { todayISO } from '../lib/dates'
-import { applyTheme, getTheme, type ThemeSetting } from '../lib/hooks'
+import { BackupError, buildBackup, parseBackup, type BackupPhoto } from '../lib/backup'
 import { getLastBackup, markBackupDone } from '../lib/backupReminder'
+import { todayISO } from '../lib/dates'
+import { plural } from '../lib/format'
+import { applyTheme, getTheme, type ThemeSetting } from '../lib/hooks'
+import { blobToDataURL } from '../lib/image'
 
 const THEMES: { key: ThemeSetting; label: string }[] = [
+  { key: 'dark', label: 'Dark' },
+  { key: 'light', label: 'Light' },
   { key: 'system', label: 'System' },
-  { key: 'light', label: 'Hell' },
-  { key: 'dark', label: 'Dunkel' },
 ]
 
+function Group({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section className="card space-y-4">
+      <h2 className="eyebrow">{title}</h2>
+      {children}
+    </section>
+  )
+}
+
 export default function SettingsPage() {
-  const { workouts, custom } = useData()
+  const { workouts, custom, bodyWeights, photos } = useData()
   const toast = useToast()
   const fileRef = useRef<HTMLInputElement>(null)
   const [theme, setTheme] = useState<ThemeSetting>(getTheme)
   const [persisted, setPersisted] = useState<boolean | null>(null)
   const [lastBackup, setLastBackup] = useState(getLastBackup)
+  const [withPhotos, setWithPhotos] = useState(true)
+  const [busy, setBusy] = useState(false)
 
   useEffect(() => {
     navigator.storage?.persisted?.().then(setPersisted).catch(() => setPersisted(null))
@@ -28,13 +42,26 @@ export default function SettingsPage() {
   const demoCount = workouts.filter((w) => w.id.startsWith('demo-')).length
 
   async function exportData() {
-    const backup = buildBackup(workouts, custom)
-    const filename = `gym-tracker-${todayISO()}.json`
-    const file = new File([JSON.stringify(backup, null, 2)], filename, { type: 'application/json' })
+    setBusy(true)
     try {
+      const encoded: BackupPhoto[] = withPhotos
+        ? await Promise.all(
+            photos.map(async (p) => ({
+              id: p.id,
+              date: p.date,
+              createdAt: p.createdAt,
+              ...(p.note ? { note: p.note } : {}),
+              full: await blobToDataURL(p.full),
+              thumb: await blobToDataURL(p.thumb),
+            })),
+          )
+        : []
+      const backup = buildBackup({ workouts, exercises: custom, bodyWeights, photos: encoded })
+      const filename = `gym-tracker-${todayISO()}.json`
+      const file = new File([JSON.stringify(backup)], filename, { type: 'application/json' })
       // On phones the share sheet lets you save to Files / send to yourself.
       if (navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], title: 'Gym-Tracker Sicherung' })
+        await navigator.share({ files: [file], title: 'Gym Tracker backup' })
       } else {
         const url = URL.createObjectURL(file)
         const a = document.createElement('a')
@@ -45,119 +72,129 @@ export default function SettingsPage() {
       }
       markBackupDone()
       setLastBackup(getLastBackup())
-      toast('Sicherung erstellt.')
+      toast('Backup created.')
     } catch (err) {
-      if ((err as Error).name !== 'AbortError') toast('Export fehlgeschlagen.', 'error')
+      if ((err as Error).name !== 'AbortError') toast('Export failed.', 'error')
+    } finally {
+      setBusy(false)
     }
   }
 
   async function importData(file: File) {
     try {
       const backup = parseBackup(await file.text())
-      const msg = `Sicherung einspielen?\n\n${backup.workouts.length} Trainings, ${backup.exercises.length} eigene Übungen.\n\nAchtung: Alle aktuellen Daten auf diesem Gerät werden ersetzt.`
+      const msg =
+        `Restore this backup?\n\n${plural(backup.workouts.length, 'workout', 'workouts')}, ` +
+        `${plural(backup.exercises.length, 'custom exercise', 'custom exercises')}, ` +
+        `${plural(backup.bodyWeights.length, 'weight entry', 'weight entries')}, ${plural(backup.photos.length, 'photo', 'photos')}.\n\n` +
+        'Warning: all current data on this device will be replaced.'
       if (!confirm(msg)) return
       await replaceAll(backup)
-      toast('Sicherung eingespielt.')
+      toast('Backup restored.')
     } catch (err) {
-      toast(err instanceof BackupError ? err.message : 'Import fehlgeschlagen.', 'error')
+      toast(err instanceof BackupError ? err.message : 'Import failed.', 'error')
     } finally {
       if (fileRef.current) fileRef.current.value = ''
     }
   }
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-extrabold">Einstellungen</h1>
+    <div>
+      <PageHeader title="Settings" hideSettings />
 
-      <section className="card space-y-3">
-        <h2 className="font-bold">Darstellung</h2>
-        <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Farbschema">
-          {THEMES.map((t) => (
-            <button
-              key={t.key}
-              role="radio"
-              aria-checked={theme === t.key}
-              className={theme === t.key ? 'btn-primary' : 'btn-secondary'}
-              onClick={() => {
-                setTheme(t.key)
-                applyTheme(t.key)
-              }}
-            >
-              {t.label}
+      <div className="space-y-4">
+        <Group title="Appearance">
+          <div className="grid grid-cols-3 gap-1 rounded-full bg-slate-200 p-1 dark:bg-slate-800" role="radiogroup" aria-label="Color scheme">
+            {THEMES.map((t) => (
+              <button
+                key={t.key}
+                role="radio"
+                aria-checked={theme === t.key}
+                className={`min-h-10 rounded-full text-sm font-semibold transition-colors ${
+                  theme === t.key ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-600 dark:text-white' : 'text-slate-500'
+                }`}
+                onClick={() => {
+                  setTheme(t.key)
+                  applyTheme(t.key)
+                }}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+        </Group>
+
+        <Group title="Back up your data">
+          <p className="text-slate-500">
+            Everything is stored only on <strong className="text-slate-900 dark:text-white">this device</strong>, in your browser. Export a backup file regularly – it is also how you move to a new phone.
+          </p>
+          <p className="text-sm">
+            Last backup: <strong>{lastBackup ? new Date(lastBackup).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'never'}</strong>
+            <span className="block text-slate-500">
+              {plural(workouts.length, 'workout', 'workouts')} · {plural(custom.length, 'custom exercise', 'custom exercises')} · {plural(bodyWeights.length, 'weight entry', 'weight entries')} · {plural(photos.length, 'photo', 'photos')}
+            </span>
+          </p>
+          {photos.length > 0 && (
+            <label className="flex min-h-11 items-center gap-3">
+              <input type="checkbox" className="size-5 accent-[var(--accent-solid)]" checked={withPhotos} onChange={(e) => setWithPhotos(e.target.checked)} />
+              <span>Include progress photos <span className="text-slate-500">(larger file)</span></span>
+            </label>
+          )}
+          <div className="grid grid-cols-2 gap-2">
+            <button className="btn-primary" onClick={exportData} disabled={busy}>
+              {busy ? 'Working…' : 'Export'}
             </button>
-          ))}
-        </div>
-      </section>
+            <button className="btn-secondary" onClick={() => fileRef.current?.click()} disabled={busy}>
+              Import
+            </button>
+          </div>
+          <input
+            ref={fileRef}
+            type="file"
+            accept=".json,application/json"
+            className="hidden"
+            onChange={(e) => e.target.files?.[0] && importData(e.target.files[0])}
+          />
+          <p className="text-xs text-slate-500">
+            Storage protection:{' '}
+            {persisted === null
+              ? 'unknown'
+              : persisted
+                ? 'the browser will not clear your data automatically.'
+                : 'the browser may clear data when storage runs low – add the app to your home screen and back up regularly.'}
+          </p>
+        </Group>
 
-      <section className="card space-y-3">
-        <h2 className="font-bold">Daten sichern</h2>
-        <p className="text-sm text-slate-600 dark:text-slate-400">
-          Alles liegt nur auf <strong>diesem Gerät</strong> in deinem Browser. Sichere deine Daten regelmäßig als Datei – auch zum Umzug auf ein neues Handy.
-        </p>
-        <p className="text-sm">
-          Letzte Sicherung: <strong>{lastBackup ? new Date(lastBackup).toLocaleDateString('de-DE') : 'noch nie'}</strong>
-          {' · '}
-          {workouts.length} Trainings, {custom.length} eigene Übungen
-        </p>
-        <div className="grid grid-cols-2 gap-2">
-          <button className="btn-primary" onClick={exportData}>Exportieren</button>
-          <button className="btn-secondary" onClick={() => fileRef.current?.click()}>Importieren</button>
-        </div>
-        <input
-          ref={fileRef}
-          type="file"
-          accept=".json,application/json"
-          className="hidden"
-          onChange={(e) => e.target.files?.[0] && importData(e.target.files[0])}
-        />
-        <p className="text-xs text-slate-500">
-          Speicher-Schutz:{' '}
-          {persisted === null
-            ? 'unbekannt'
-            : persisted
-              ? 'Der Browser darf die Daten nicht automatisch löschen.'
-              : 'Der Browser könnte Daten bei Speichermangel löschen – installiere die App auf dem Home-Bildschirm und sichere regelmäßig.'}
-        </p>
-      </section>
+        <Group title="Demo data">
+          <p className="text-slate-500">
+            About 12 weeks of push / pull / legs training to try out the charts. You can remove it again without touching your own workouts.
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            <button className="btn-secondary" onClick={async () => toast(`${plural(await loadDemo(), 'demo workout', 'demo workouts')} loaded.`)}>
+              Load demo
+            </button>
+            <button className="btn-secondary" disabled={demoCount === 0} onClick={async () => toast(`${plural(await removeDemo(), 'demo workout', 'demo workouts')} removed.`)}>
+              Remove demo
+            </button>
+          </div>
+        </Group>
 
-      <section className="card space-y-3">
-        <h2 className="font-bold">Demo-Daten</h2>
-        <p className="text-sm text-slate-600 dark:text-slate-400">
-          Ca. 12 Wochen Push/Pull/Beine-Training zum Ausprobieren des Dashboards. Sie lassen sich wieder entfernen, ohne deine eigenen Trainings anzufassen.
-        </p>
-        <div className="grid grid-cols-2 gap-2">
+        <Group title="Danger zone">
           <button
-            className="btn-secondary"
-            onClick={async () => toast(`${await loadDemo()} Demo-Trainings geladen.`)}
+            className="btn-danger w-full"
+            onClick={async () => {
+              if (!confirm('Permanently delete ALL workouts, custom exercises, body weights and photos?')) return
+              if (!confirm('Are you really sure? This cannot be undone. Do you have a backup?')) return
+              await wipeAll()
+              toast('All data deleted.')
+            }}
           >
-            Demo laden
+            Delete all data
           </button>
-          <button
-            className="btn-secondary"
-            disabled={demoCount === 0}
-            onClick={async () => toast(`${await removeDemo()} Demo-Trainings entfernt.`)}
-          >
-            Demo entfernen
-          </button>
-        </div>
-      </section>
+        </Group>
 
-      <section className="card space-y-3">
-        <h2 className="font-bold text-red-600 dark:text-red-400">Gefahrenzone</h2>
-        <button
-          className="btn-danger w-full"
-          onClick={async () => {
-            if (!confirm('ALLE Trainings und eigenen Übungen unwiderruflich löschen?')) return
-            if (!confirm('Wirklich sicher? Das kann nicht rückgängig gemacht werden. Hast du eine Sicherung?')) return
-            await wipeAll()
-            toast('Alle Daten gelöscht.')
-          }}
-        >
-          Alle Daten löschen
-        </button>
-      </section>
-
-      <p className="pb-4 text-center text-xs text-slate-500">Gym Tracker · MIT-Lizenz · Daten bleiben auf deinem Gerät</p>
+        <p className="pb-4 text-center text-xs text-slate-500">Gym Tracker · MIT license · your data stays on your device</p>
+      </div>
     </div>
   )
 }

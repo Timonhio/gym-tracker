@@ -13,8 +13,8 @@ import {
 } from './pr'
 import type { Workout } from './types'
 
-const BENCH = 'bankdruecken'
-const PULLUP = 'klimmzuege'
+const BENCH = 'bench-press'
+const PULLUP = 'pull-ups'
 const isBw = (id: string) => id === PULLUP
 
 let n = 0
@@ -195,7 +195,7 @@ describe('computeSetPRs', () => {
 
   it('tracks exercises independently', () => {
     const a = workout('w1', '2026-01-01', BENCH, [[5, 100]])
-    const b = workout('w2', '2026-01-02', 'kniebeugen', [[5, 60]])
+    const b = workout('w2', '2026-01-02', 'squat', [[5, 60]])
     expect(prsOf(b, [a, b])[0]).toEqual(['weight', 'e1rm'])
   })
 

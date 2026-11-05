@@ -3,20 +3,66 @@
 /* Dark mode is toggled with a "dark" class on <html> (see index.html + Settings). */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/*
+  Design language: near-black surfaces, big rounded cards, pill buttons,
+  one orange accent. The neutral "slate" scale is remapped so every
+  bg-slate-* / text-slate-* class automatically follows this palette.
+*/
 @theme {
-  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+
+  --color-slate-50: #f6f6f9;
+  --color-slate-100: #efeff4;
+  --color-slate-200: #e3e3e9;
+  --color-slate-300: #cfcfd6;
+  --color-slate-400: #a3a3ab;
+  --color-slate-500: #8a8a92;
+  --color-slate-600: #5c5c63;
+  --color-slate-700: #333338;
+  --color-slate-800: #212124;
+  --color-slate-900: #151517;
+  --color-slate-950: #000000;
+}
+@theme inline {
+  --color-accent: var(--accent);
+  --color-hit: var(--body-hit);
+}
+
+:root {
+  color-scheme: light;
+  --accent: #c2570c; /* accent as TEXT/line on light surfaces */
+  --accent-solid: #f28a2e; /* fills (buttons, bars) – same orange in both modes */
+  --on-accent: #1f0d00;
+  --body-muscle: #cfcfd8;
+  --body-hit: #ef7f1a;
+  --body-hit-soft: #f6c595;
+  --chart-surface: #ffffff;
+  --chart-text: #0b0b0b;
+  --chart-text-2: #6b6b73;
+  --chart-grid: #e6e6ec;
+  --series-1: #d9650f;
+  --series-2: #52525b;
+}
+:root.dark {
+  color-scheme: dark;
+  --accent: #ff9a3d;
+  --body-muscle: #3d3d43;
+  --body-hit: #f28a2e;
+  --body-hit-soft: #7d4d27;
+  --chart-surface: #151517;
+  --chart-text: #f5f5f7;
+  --chart-text-2: #9a9aa2;
+  --chart-grid: #2a2a2e;
+  --series-1: #f28a2e;
+  --series-2: #c7c7cc;
 }
 
 html {
   -webkit-tap-highlight-color: transparent;
-  color-scheme: light;
-}
-html.dark {
-  color-scheme: dark;
 }
 
 body {
-  @apply bg-slate-100 text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100;
+  @apply bg-slate-100 text-slate-900 antialiased dark:bg-slate-950 dark:text-white;
   overscroll-behavior-y: none;
 }
 
@@ -28,60 +74,59 @@ input[type='number']::-webkit-inner-spin-button {
 }
 
 @utility card {
-  @apply rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-800;
+  @apply rounded-3xl border border-black/5 bg-white p-5 dark:border-white/[0.07] dark:bg-slate-900;
+}
+@utility inset {
+  @apply rounded-2xl bg-slate-100 dark:bg-slate-800;
 }
 @utility btn {
-  @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 text-base font-semibold transition-colors active:scale-[0.98] disabled:opacity-50;
+  @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-5 text-base font-semibold whitespace-nowrap transition active:scale-[0.98] disabled:opacity-40;
 }
 @utility btn-primary {
-  @apply btn bg-emerald-600 text-white hover:bg-emerald-700 dark:bg-emerald-500 dark:text-slate-950 dark:hover:bg-emerald-400;
+  @apply btn bg-[var(--accent-solid)] text-[var(--on-accent)] hover:brightness-95;
 }
 @utility btn-secondary {
-  @apply btn bg-slate-200 text-slate-900 hover:bg-slate-300 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700;
+  @apply btn bg-slate-200 text-slate-900 hover:bg-slate-300 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700;
 }
 @utility btn-danger {
   @apply btn bg-red-600 text-white hover:bg-red-700;
 }
 @utility btn-ghost {
-  @apply btn text-slate-600 hover:bg-slate-200 dark:text-slate-300 dark:hover:bg-slate-800;
+  @apply btn text-slate-600 hover:bg-slate-200 dark:text-slate-400 dark:hover:bg-slate-800;
+}
+/* Round icon button (page header actions). */
+@utility btn-icon {
+  @apply inline-grid size-11 shrink-0 place-items-center rounded-full bg-slate-200 text-slate-900 transition active:scale-95 dark:bg-slate-800 dark:text-white;
 }
 @utility field {
-  @apply w-full rounded-xl border border-slate-300 bg-white px-3 text-base text-slate-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100;
-  min-height: 2.75rem;
+  @apply w-full rounded-2xl border border-transparent bg-slate-100 px-4 text-base text-slate-900 outline-none placeholder:text-slate-500 focus:border-accent focus:ring-1 focus:ring-accent dark:bg-slate-800 dark:text-white;
+  min-height: 3rem;
 }
-/* Big number boxes for the set rows. */
+/* Number boxes for the set rows: large enough to hit with a thumb. */
 @utility num {
-  @apply h-14 w-full min-w-0 rounded-xl border border-slate-300 bg-slate-50 text-center text-xl font-semibold text-slate-900 outline-none focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-500/30 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:focus:bg-slate-900;
+  @apply h-12 w-full min-w-0 rounded-2xl border border-transparent bg-slate-100 text-center text-lg font-semibold text-slate-900 tabular-nums outline-none placeholder:font-normal placeholder:text-slate-400 focus:border-accent focus:ring-1 focus:ring-accent dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-600;
 }
 @utility chip {
-  @apply inline-flex min-h-9 shrink-0 items-center rounded-full bg-slate-200 px-3 text-sm font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300;
+  @apply inline-flex min-h-10 shrink-0 items-center rounded-full bg-slate-200 px-4 text-sm font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300;
 }
 @utility chip-active {
   /* important: must win against .chip's own colors regardless of CSS order */
-  @apply bg-emerald-600! text-white! dark:bg-emerald-500! dark:text-slate-950!;
+  @apply bg-slate-900! text-white! dark:bg-white! dark:text-black!;
+}
+/* Info pill with a small accent icon, e.g. "6 exercises". */
+@utility pill {
+  @apply inline-flex shrink-0 items-center gap-2 rounded-full bg-slate-200/70 px-3.5 py-2 text-sm font-medium whitespace-nowrap dark:bg-slate-900;
+}
+/* Small caps label above a title or section. */
+@utility eyebrow {
+  @apply text-xs font-medium tracking-wider text-slate-500 uppercase;
 }
 @utility label {
-  @apply mb-1 block text-sm font-medium text-slate-600 dark:text-slate-400;
+  @apply mb-1.5 block text-sm text-slate-500 dark:text-slate-400;
 }
-
-/* Chart tokens (validated reference palette, slots 1–2). Dark values are stepped for the dark surface. */
-:root {
-  --chart-surface: #ffffff;
-  --chart-text: #0b0b0b;
-  --chart-text-2: #52514e;
-  --chart-grid: #e7e5e0;
-  --series-1: #2a78d6;
-  --series-2: #eb6834;
-  --pr-ink: #b45309;
-}
-html.dark {
-  --chart-surface: #0f172a;
-  --chart-text: #f0efec;
-  --chart-text-2: #c3c2b7;
-  --chart-grid: #2a2f3a;
-  --series-1: #3987e5;
-  --series-2: #d95926;
-  --pr-ink: #fbbf24;
+/* Small neutral tag, e.g. "custom". */
+@utility tag {
+  @apply ml-2 rounded-full bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-400;
 }
 
 /* Horizontally scrolling chip rows: scrollable, but without a visible scrollbar. */

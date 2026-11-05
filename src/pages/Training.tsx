@@ -1,14 +1,16 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ExerciseCard } from '../components/ExerciseCard'
 import { ExerciseForm } from '../components/ExerciseForm'
 import { ExercisePicker } from '../components/ExercisePicker'
 import { PlusIcon } from '../components/icons'
+import { SettingsButton } from '../components/PageHeader'
+import { SessionSummary } from '../components/SessionSummary'
 import { useToast } from '../components/Toast'
 import { saveCustomExercise, saveWorkout } from '../db/actions'
 import { db } from '../db/db'
 import { useData } from '../db/DataProvider'
-import { todayISO } from '../lib/dates'
+import { formatDate, todayISO } from '../lib/dates'
 import {
   draftToPreviewWorkout,
   draftToWorkout,
@@ -22,7 +24,9 @@ import {
 import { describePR, uid } from '../lib/format'
 import { findLastEntry } from '../lib/history'
 import { useDebounced } from '../lib/hooks'
-import { computeSetPRs, currentPRs, setKey } from '../lib/pr'
+import { computeSetPRs, currentPRs, isValidSet, setKey } from '../lib/pr'
+import { entriesFromDraft, sessionTargets } from '../lib/session'
+import { workoutVolume } from '../lib/stats'
 import type { Exercise } from '../lib/types'
 
 /** Re-mounts the form when switching between "new" and "edit workout X". */
@@ -55,7 +59,7 @@ function TrainingForm({ editId }: { editId?: string }) {
         const w = await db.workouts.get(editId)
         if (cancelled) return
         if (!w) {
-          toast('Training nicht gefunden.', 'error')
+          toast('Workout not found.', 'error')
           navigate('/history', { replace: true })
           return
         }
@@ -65,7 +69,11 @@ function TrainingForm({ editId }: { editId?: string }) {
         const saved = await db.drafts.get('current')
         if (cancelled) return
         // A draft without any exercise is just "nothing yet" -> always today.
-        setDraft(saved && saved.entries.length > 0 ? { date: saved.date, entries: saved.entries } : { date: todayISO(), entries: [] })
+        setDraft(
+          saved && saved.entries.length > 0
+            ? { name: saved.name ?? '', date: saved.date, entries: saved.entries }
+            : { name: '', date: todayISO(), entries: [] },
+        )
       }
     })()
     return () => {
@@ -113,12 +121,39 @@ function TrainingForm({ editId }: { editId?: string }) {
       }
     }
     fresh.slice(0, 3).forEach((f) => toast(f.text, 'pr'))
-    if (fresh.length > 3) toast(`… und ${fresh.length - 3} weitere PRs`, 'pr')
+    if (fresh.length > 3) toast(`… and ${fresh.length - 3} more PRs`, 'pr')
   }, [settled, settledPRs, previewId, lookup, toast])
 
   const incompleteIds = useMemo(() => (draft ? incompleteSetIds(draft, isBodyweight) : new Set<string>()), [draft, isBodyweight])
 
-  if (!draft || !preview) return <p className="py-10 text-center text-slate-500">Lade …</p>
+  // ---- session summary -----------------------------------------------------
+  const targets = useMemo(() => (draft ? sessionTargets(entriesFromDraft(draft), lookup) : null), [draft, lookup])
+
+  // The session title is a textarea so long names wrap instead of being cut off.
+  const titleRef = useRef<HTMLTextAreaElement>(null)
+  const titleText = draft ? draft.name || targets?.name || '' : ''
+  useLayoutEffect(() => {
+    const el = titleRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${el.scrollHeight}px`
+  }, [titleText, draft === null])
+  const stats = useMemo(() => {
+    if (!preview) return { done: 0, planned: 0, volume: 0, prs: 0 }
+    let done = 0
+    let planned = 0
+    let prs = 0
+    for (const e of preview.entries) {
+      for (const s of e.sets) {
+        planned++
+        if (isValidSet(s, isBodyweight(e.exerciseId))) done++
+        if (livePRs.has(setKey(previewId, s.id))) prs++
+      }
+    }
+    return { done, planned, volume: workoutVolume(preview, isBodyweight), prs }
+  }, [preview, livePRs, previewId, isBodyweight])
+
+  if (!draft || !preview || !targets) return <p className="py-10 text-center text-slate-500">Loading…</p>
 
   // ---- handlers --------------------------------------------------------------
   const update = (fn: (d: Draft) => Draft) => setDraft((d) => (d ? fn(d) : d))
@@ -134,59 +169,102 @@ function TrainingForm({ editId }: { editId?: string }) {
     if (!draft) return
     if (incompleteIds.size > 0) {
       setShowErrors(true)
-      toast('Bitte unvollständige Sätze ausfüllen oder löschen.', 'error')
+      toast('Fill in or delete the incomplete sets first.', 'error')
       return
     }
     const workout = draftToWorkout(draft, editId ?? uid(), editId ? createdAt : Date.now(), isBodyweight)
     if (workout.entries.length === 0) {
-      toast('Noch kein Satz ausgefüllt – es gibt nichts zu speichern.', 'error')
+      toast('No set filled in yet – nothing to save.', 'error')
       return
     }
     setSaving(true)
     await saveWorkout(workout)
     if (!editId) await db.drafts.delete('current')
-    toast(editId ? 'Änderungen gespeichert.' : 'Training gespeichert 💪')
+    toast(editId ? 'Changes saved.' : 'Workout saved.')
     navigate('/history')
   }
 
   function discard() {
     if (editId) return navigate('/history')
-    if (!isDraftBlank(draft!) && !confirm('Das laufende Training verwerfen?')) return
-    setDraft({ date: todayISO(), entries: [] })
+    if (!isDraftBlank(draft!) && !confirm('Discard the current workout?')) return
+    setDraft({ name: '', date: todayISO(), entries: [] })
     announced.current = null
   }
 
   const usedIds = new Set(draft.entries.map((e) => e.exerciseId))
+  const isToday = draft.date === todayISO()
+  const customName = draft.name.trim() !== '' && draft.name.trim() !== targets.name
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-end justify-between gap-3">
-        <h1 className="text-2xl font-extrabold">{editId ? 'Training bearbeiten' : 'Neues Training'}</h1>
-        <div>
-          <label className="sr-only" htmlFor="date">Datum</label>
-          <input
-            id="date"
-            type="date"
-            className="field !w-auto"
-            value={draft.date}
-            max="9999-12-31"
-            onChange={(e) => e.target.value && update((d) => ({ ...d, date: e.target.value }))}
+    <div className="space-y-5">
+      <header className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          {/* date pill: tapping it opens the native date picker */}
+          <label className="eyebrow relative mb-1 inline-flex cursor-pointer items-center gap-1.5">
+            {editId ? 'Editing · ' : ''}
+            {isToday ? 'Today' : formatDate(draft.date)}
+            <span aria-hidden="true">▾</span>
+            <input
+              type="date"
+              aria-label="Workout date"
+              className="absolute inset-0 cursor-pointer opacity-0"
+              value={draft.date}
+              onChange={(e) => e.target.value && update((d) => ({ ...d, date: e.target.value }))}
+            />
+          </label>
+          <textarea
+            ref={titleRef}
+            rows={1}
+            aria-label="Session name"
+            className="block w-full min-w-0 resize-none overflow-hidden bg-transparent text-3xl leading-tight font-bold tracking-tight outline-none placeholder:text-slate-500"
+            value={titleText}
+            maxLength={80}
+            placeholder="New session"
+            onChange={(e) => update((d) => ({ ...d, name: e.target.value === targets.name ? '' : e.target.value.replace(/\n/g, ' ') }))}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                e.currentTarget.blur()
+              }
+            }}
+            onFocus={(e) => e.currentTarget.select()}
           />
+          {customName && (
+            <button className="mt-1 text-sm text-slate-500 underline" onClick={() => update((d) => ({ ...d, name: '' }))}>
+              Use suggested name
+            </button>
+          )}
         </div>
-      </div>
+        <div className="pt-0.5">
+          <SettingsButton />
+        </div>
+      </header>
 
-      {draft.entries.length === 0 && (
-        <div className="card text-center text-slate-500 dark:text-slate-400">
-          <p className="text-lg font-semibold text-slate-700 dark:text-slate-200">Los geht’s 💪</p>
-          <p className="mt-1">Füge deine erste Übung hinzu.</p>
+      {draft.entries.length === 0 ? (
+        <div className="card text-center">
+          <p className="text-lg font-semibold">No exercises yet</p>
+          <p className="mt-1 text-slate-500">Add your first exercise – the session gets its name automatically.</p>
         </div>
+      ) : (
+        <SessionSummary
+          targets={targets}
+          moves={draft.entries.length}
+          sets={stats.done}
+          plannedSets={stats.planned}
+          volume={stats.volume}
+          prs={stats.prs}
+          heading="Today’s targets"
+        />
       )}
+
+      {draft.entries.length > 0 && <p className="eyebrow pt-1">Exercises</p>}
 
       {draft.entries.map((entry, idx) => {
         const ex = lookup(entry.exerciseId)
         return (
           <ExerciseCard
             key={entry.exerciseId}
+            index={idx + 1}
             entry={entry}
             exercise={ex}
             prs={currentPRs(withPreview, entry.exerciseId, ex.bodyweight)}
@@ -200,31 +278,31 @@ function TrainingForm({ editId }: { editId?: string }) {
             onRemoveSet={(setId) => patchEntry(idx, (e) => ({ ...e, sets: e.sets.filter((s) => s.id !== setId) }))}
             onRemove={() => {
               const hasData = entry.sets.some((s) => s.reps || s.weight)
-              if (hasData && !confirm(`${ex.name} aus dem Training entfernen?`)) return
+              if (hasData && !confirm(`Remove ${ex.name} from this workout?`)) return
               update((d) => ({ ...d, entries: d.entries.filter((_, i) => i !== idx) }))
             }}
           />
         )
       })}
 
-      <button className="btn-secondary w-full !min-h-14 text-lg" onClick={() => setPickerOpen(true)}>
-        <PlusIcon /> Übung hinzufügen
+      <button className="btn-secondary w-full" onClick={() => setPickerOpen(true)}>
+        <PlusIcon className="h-5 w-5" /> Add exercise
       </button>
 
-      <div className="flex gap-2">
-        <button className="btn-ghost flex-1" onClick={discard}>
-          {editId ? 'Abbrechen' : 'Verwerfen'}
+      <div className="flex justify-center">
+        <button className="btn-ghost" onClick={discard}>
+          {editId ? 'Cancel' : 'Discard workout'}
         </button>
       </div>
 
-      {/* sticky save bar above the bottom navigation */}
+      {/* floating primary action above the navigation */}
       <div
-        className="fixed inset-x-0 z-30 px-4"
-        style={{ bottom: 'calc(4rem + env(safe-area-inset-bottom) + 0.5rem)' }}
+        className="pointer-events-none fixed inset-x-0 z-30 bg-gradient-to-t from-slate-100 via-slate-100/80 to-transparent px-5 pt-8 dark:from-black dark:via-black/80"
+        style={{ bottom: 'calc(5.25rem + env(safe-area-inset-bottom))' }}
       >
-        <div className="mx-auto max-w-xl">
+        <div className="pointer-events-auto mx-auto max-w-sm pb-2">
           <button className="btn-primary w-full !min-h-14 text-lg shadow-lg" onClick={save} disabled={saving || draft.entries.length === 0}>
-            {editId ? 'Änderungen speichern' : 'Training speichern'}
+            {editId ? 'Save changes' : 'Save workout'}
           </button>
         </div>
       </div>
@@ -246,7 +324,7 @@ function TrainingForm({ editId }: { editId?: string }) {
             await saveCustomExercise(e)
             setCreating(false)
             addExercise(e)
-            toast(`„${e.name}“ angelegt.`)
+            toast(`“${e.name}” created.`)
           }}
         />
       )}

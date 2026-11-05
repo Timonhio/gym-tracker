@@ -14,96 +14,96 @@ function ex(
     primary,
     secondary,
     equipment,
-    bodyweight: opts.bodyweight ?? equipment === 'Körpergewicht',
+    bodyweight: opts.bodyweight ?? equipment === 'Bodyweight',
     ...(opts.timed ? { timed: true } : {}),
   }
 }
 
 /** Built-in suggestion list. IDs are stable – workouts reference them. */
 export const BUILTIN_EXERCISES: Exercise[] = [
-  // Brust
-  ex('bankdruecken', 'Bankdrücken', 'Brust', ['Trizeps', 'Schultern'], 'Langhantel'),
-  ex('schraegbankdruecken', 'Schrägbankdrücken', 'Brust', ['Schultern', 'Trizeps'], 'Langhantel'),
-  ex('kh-bankdruecken', 'Kurzhantel-Bankdrücken', 'Brust', ['Trizeps', 'Schultern'], 'Kurzhantel'),
-  ex('kh-schraegbankdruecken', 'Kurzhantel-Schrägbankdrücken', 'Brust', ['Schultern', 'Trizeps'], 'Kurzhantel'),
-  ex('fliegende', 'Fliegende', 'Brust', ['Schultern'], 'Kurzhantel'),
-  ex('cable-crossover', 'Cable Crossover', 'Brust', ['Schultern'], 'Kabel'),
-  ex('brustpresse', 'Brustpresse', 'Brust', ['Trizeps', 'Schultern'], 'Maschine'),
-  ex('dips', 'Dips', 'Brust', ['Trizeps', 'Schultern'], 'Körpergewicht'),
-  ex('liegestuetze', 'Liegestütze', 'Brust', ['Trizeps', 'Schultern'], 'Körpergewicht'),
+  // Chest
+  ex('bench-press', 'Bench Press', 'Chest', ['Triceps', 'Shoulders'], 'Barbell'),
+  ex('incline-bench-press', 'Incline Bench Press', 'Chest', ['Shoulders', 'Triceps'], 'Barbell'),
+  ex('dumbbell-bench-press', 'Dumbbell Bench Press', 'Chest', ['Triceps', 'Shoulders'], 'Dumbbell'),
+  ex('incline-dumbbell-press', 'Incline Dumbbell Press', 'Chest', ['Shoulders', 'Triceps'], 'Dumbbell'),
+  ex('dumbbell-fly', 'Dumbbell Fly', 'Chest', ['Shoulders'], 'Dumbbell'),
+  ex('cable-crossover', 'Cable Crossover', 'Chest', ['Shoulders'], 'Cable'),
+  ex('chest-press-machine', 'Chest Press Machine', 'Chest', ['Triceps', 'Shoulders'], 'Machine'),
+  ex('dips', 'Dips', 'Chest', ['Triceps', 'Shoulders'], 'Bodyweight'),
+  ex('push-ups', 'Push-Ups', 'Chest', ['Triceps', 'Shoulders'], 'Bodyweight'),
 
-  // Rücken
-  ex('kreuzheben', 'Kreuzheben', 'Rücken', ['Gesäß', 'Beinbeuger', 'Unterarme'], 'Langhantel'),
-  ex('klimmzuege', 'Klimmzüge', 'Rücken', ['Bizeps', 'Unterarme'], 'Körpergewicht'),
-  ex('latzug', 'Latzug', 'Rücken', ['Bizeps'], 'Kabel'),
-  ex('rudern-langhantel', 'Rudern (Langhantel)', 'Rücken', ['Bizeps', 'Unterarme'], 'Langhantel'),
-  ex('rudern-kabel', 'Rudern (Kabel)', 'Rücken', ['Bizeps'], 'Kabel'),
-  ex('kh-rudern', 'Einarmiges Kurzhantelrudern', 'Rücken', ['Bizeps'], 'Kurzhantel'),
-  ex('tbar-rudern', 'T-Bar-Rudern', 'Rücken', ['Bizeps'], 'Langhantel'),
-  ex('rueckenstrecker', 'Rückenstrecker', 'Rücken', ['Gesäß', 'Beinbeuger'], 'Körpergewicht'),
+  // Back
+  ex('deadlift', 'Deadlift', 'Back', ['Glutes', 'Hamstrings', 'Forearms'], 'Barbell'),
+  ex('pull-ups', 'Pull-Ups', 'Back', ['Biceps', 'Forearms'], 'Bodyweight'),
+  ex('lat-pulldown', 'Lat Pulldown', 'Back', ['Biceps'], 'Cable'),
+  ex('barbell-row', 'Barbell Row', 'Back', ['Biceps', 'Forearms'], 'Barbell'),
+  ex('seated-cable-row', 'Seated Cable Row', 'Back', ['Biceps'], 'Cable'),
+  ex('one-arm-dumbbell-row', 'One-Arm Dumbbell Row', 'Back', ['Biceps'], 'Dumbbell'),
+  ex('t-bar-row', 'T-Bar Row', 'Back', ['Biceps'], 'Barbell'),
+  ex('back-extension', 'Back Extension', 'Back', ['Glutes', 'Hamstrings'], 'Bodyweight'),
 
-  // Schultern
-  ex('schulterdruecken', 'Schulterdrücken', 'Schultern', ['Trizeps'], 'Langhantel'),
-  ex('kh-schulterdruecken', 'Kurzhantel-Schulterdrücken', 'Schultern', ['Trizeps'], 'Kurzhantel'),
-  ex('seitheben', 'Seitheben', 'Schultern', [], 'Kurzhantel'),
-  ex('frontheben', 'Frontheben', 'Schultern', ['Brust'], 'Kurzhantel'),
-  ex('face-pulls', 'Face Pulls', 'Schultern', ['Rücken'], 'Kabel'),
-  ex('reverse-flys', 'Reverse Flys', 'Schultern', ['Rücken'], 'Maschine'),
-  ex('aufrechtes-rudern', 'Aufrechtes Rudern', 'Schultern', ['Bizeps'], 'Langhantel'),
-  ex('shrugs', 'Shrugs', 'Schultern', ['Rücken', 'Unterarme'], 'Kurzhantel'),
+  // Shoulders
+  ex('overhead-press', 'Overhead Press', 'Shoulders', ['Triceps'], 'Barbell'),
+  ex('dumbbell-shoulder-press', 'Dumbbell Shoulder Press', 'Shoulders', ['Triceps'], 'Dumbbell'),
+  ex('lateral-raise', 'Lateral Raise', 'Shoulders', [], 'Dumbbell'),
+  ex('front-raise', 'Front Raise', 'Shoulders', ['Chest'], 'Dumbbell'),
+  ex('face-pulls', 'Face Pulls', 'Shoulders', ['Back'], 'Cable'),
+  ex('reverse-fly', 'Reverse Fly', 'Shoulders', ['Back'], 'Machine'),
+  ex('upright-row', 'Upright Row', 'Shoulders', ['Biceps'], 'Barbell'),
+  ex('shrugs', 'Shrugs', 'Shoulders', ['Back', 'Forearms'], 'Dumbbell'),
 
-  // Bizeps
-  ex('bizepscurls', 'Bizepscurls', 'Bizeps', ['Unterarme'], 'Kurzhantel'),
-  ex('langhantelcurls', 'Langhantelcurls', 'Bizeps', ['Unterarme'], 'Langhantel'),
-  ex('hammercurls', 'Hammercurls', 'Bizeps', ['Unterarme'], 'Kurzhantel'),
-  ex('preacher-curls', 'Preacher Curls', 'Bizeps', [], 'SZ-Stange'),
-  ex('kabelcurls', 'Kabelcurls', 'Bizeps', ['Unterarme'], 'Kabel'),
+  // Biceps
+  ex('dumbbell-curl', 'Dumbbell Curl', 'Biceps', ['Forearms'], 'Dumbbell'),
+  ex('barbell-curl', 'Barbell Curl', 'Biceps', ['Forearms'], 'Barbell'),
+  ex('hammer-curl', 'Hammer Curl', 'Biceps', ['Forearms'], 'Dumbbell'),
+  ex('preacher-curl', 'Preacher Curl', 'Biceps', [], 'EZ-Bar'),
+  ex('cable-curl', 'Cable Curl', 'Biceps', ['Forearms'], 'Cable'),
 
-  // Trizeps
-  ex('trizepsdruecken', 'Trizepsdrücken', 'Trizeps', [], 'Kabel'),
-  ex('skull-crushers', 'Skull Crushers', 'Trizeps', [], 'SZ-Stange'),
-  ex('ueberkopf-trizeps', 'Überkopf-Trizepsstrecken', 'Trizeps', [], 'Kurzhantel'),
-  ex('enges-bankdruecken', 'Enges Bankdrücken', 'Trizeps', ['Brust', 'Schultern'], 'Langhantel'),
+  // Triceps
+  ex('triceps-pushdown', 'Triceps Pushdown', 'Triceps', [], 'Cable'),
+  ex('skull-crushers', 'Skull Crushers', 'Triceps', [], 'EZ-Bar'),
+  ex('overhead-triceps-extension', 'Overhead Triceps Extension', 'Triceps', [], 'Dumbbell'),
+  ex('close-grip-bench-press', 'Close-Grip Bench Press', 'Triceps', ['Chest', 'Shoulders'], 'Barbell'),
 
-  // Unterarme
-  ex('handgelenkcurls', 'Handgelenkcurls', 'Unterarme', [], 'Langhantel'),
-  ex('farmers-walk', "Farmer's Walk", 'Unterarme', ['Schultern', 'Bauch'], 'Kurzhantel'),
+  // Forearms
+  ex('wrist-curl', 'Wrist Curl', 'Forearms', [], 'Barbell'),
+  ex('farmers-walk', "Farmer's Walk", 'Forearms', ['Shoulders', 'Abs'], 'Dumbbell'),
 
-  // Bauch
-  ex('plank', 'Plank', 'Bauch', ['Schultern'], 'Körpergewicht', { timed: true }),
-  ex('crunches', 'Crunches', 'Bauch', [], 'Körpergewicht'),
-  ex('haengendes-beinheben', 'Hängendes Beinheben', 'Bauch', ['Unterarme'], 'Körpergewicht'),
-  ex('cable-crunch', 'Cable Crunch', 'Bauch', [], 'Kabel'),
-  ex('russian-twist', 'Russian Twist', 'Bauch', [], 'Sonstiges', { bodyweight: true }),
+  // Abs
+  ex('plank', 'Plank', 'Abs', ['Shoulders'], 'Bodyweight', { timed: true }),
+  ex('crunches', 'Crunches', 'Abs', [], 'Bodyweight'),
+  ex('hanging-leg-raise', 'Hanging Leg Raise', 'Abs', ['Forearms'], 'Bodyweight'),
+  ex('cable-crunch', 'Cable Crunch', 'Abs', [], 'Cable'),
+  ex('russian-twist', 'Russian Twist', 'Abs', [], 'Other', { bodyweight: true }),
 
-  // Quadrizeps
-  ex('kniebeugen', 'Kniebeugen', 'Quadrizeps', ['Gesäß', 'Beinbeuger'], 'Langhantel'),
-  ex('frontkniebeugen', 'Frontkniebeugen', 'Quadrizeps', ['Gesäß', 'Bauch'], 'Langhantel'),
-  ex('beinpresse', 'Beinpresse', 'Quadrizeps', ['Gesäß', 'Beinbeuger'], 'Maschine'),
-  ex('beinstrecker', 'Beinstrecker', 'Quadrizeps', [], 'Maschine'),
-  ex('ausfallschritte', 'Ausfallschritte', 'Quadrizeps', ['Gesäß', 'Beinbeuger'], 'Kurzhantel'),
-  ex('bulgarian-split-squat', 'Bulgarian Split Squat', 'Quadrizeps', ['Gesäß'], 'Kurzhantel'),
-  ex('hackenschmidt', 'Hackenschmidt-Kniebeuge', 'Quadrizeps', ['Gesäß'], 'Maschine'),
+  // Quads
+  ex('squat', 'Squat', 'Quads', ['Glutes', 'Hamstrings'], 'Barbell'),
+  ex('front-squat', 'Front Squat', 'Quads', ['Glutes', 'Abs'], 'Barbell'),
+  ex('leg-press', 'Leg Press', 'Quads', ['Glutes', 'Hamstrings'], 'Machine'),
+  ex('leg-extension', 'Leg Extension', 'Quads', [], 'Machine'),
+  ex('lunges', 'Lunges', 'Quads', ['Glutes', 'Hamstrings'], 'Dumbbell'),
+  ex('bulgarian-split-squat', 'Bulgarian Split Squat', 'Quads', ['Glutes'], 'Dumbbell'),
+  ex('hack-squat', 'Hack Squat', 'Quads', ['Glutes'], 'Machine'),
 
-  // Beinbeuger
-  ex('rumaenisches-kreuzheben', 'Rumänisches Kreuzheben', 'Beinbeuger', ['Gesäß', 'Rücken'], 'Langhantel'),
-  ex('beinbeuger-liegend', 'Beinbeuger (liegend)', 'Beinbeuger', ['Waden'], 'Maschine'),
-  ex('beinbeuger-sitzend', 'Beinbeuger (sitzend)', 'Beinbeuger', ['Waden'], 'Maschine'),
+  // Hamstrings
+  ex('romanian-deadlift', 'Romanian Deadlift', 'Hamstrings', ['Glutes', 'Back'], 'Barbell'),
+  ex('lying-leg-curl', 'Lying Leg Curl', 'Hamstrings', ['Calves'], 'Machine'),
+  ex('seated-leg-curl', 'Seated Leg Curl', 'Hamstrings', ['Calves'], 'Machine'),
 
-  // Gesäß
-  ex('hip-thrust', 'Hip Thrust', 'Gesäß', ['Beinbeuger'], 'Langhantel'),
-  ex('kabel-kickbacks', 'Kabel-Kickbacks', 'Gesäß', ['Beinbeuger'], 'Kabel'),
-  ex('abduktoren', 'Abduktorenmaschine', 'Gesäß', [], 'Maschine'),
+  // Glutes
+  ex('hip-thrust', 'Hip Thrust', 'Glutes', ['Hamstrings'], 'Barbell'),
+  ex('cable-kickback', 'Cable Kickback', 'Glutes', ['Hamstrings'], 'Cable'),
+  ex('hip-abduction', 'Hip Abduction Machine', 'Glutes', [], 'Machine'),
 
-  // Waden
-  ex('wadenheben-stehend', 'Wadenheben (stehend)', 'Waden', [], 'Maschine'),
-  ex('wadenheben-sitzend', 'Wadenheben (sitzend)', 'Waden', [], 'Maschine'),
+  // Calves
+  ex('standing-calf-raise', 'Standing Calf Raise', 'Calves', [], 'Machine'),
+  ex('seated-calf-raise', 'Seated Calf Raise', 'Calves', [], 'Machine'),
 ]
 
 /** Built-ins plus the user's custom exercises, sorted by name. */
 export function mergeCatalog(custom: Exercise[]): Exercise[] {
   return [...BUILTIN_EXERCISES, ...custom.map((e) => ({ ...e, custom: true }))].sort((a, b) =>
-    a.name.localeCompare(b.name, 'de'),
+    a.name.localeCompare(b.name, 'en'),
   )
 }
 
@@ -111,10 +111,10 @@ export function mergeCatalog(custom: Exercise[]): Exercise[] {
 export function unknownExercise(id: string): Exercise {
   return {
     id,
-    name: 'Gelöschte Übung',
-    primary: 'Brust',
+    name: 'Deleted exercise',
+    primary: 'Chest',
     secondary: [],
-    equipment: 'Sonstiges',
+    equipment: 'Other',
     bodyweight: false,
   }
 }
@@ -124,37 +124,37 @@ export function makeLookup(catalog: Exercise[]) {
   return (id: string): Exercise => map.get(id) ?? unknownExercise(id)
 }
 
-// ---- Groupings used by the dashboard -------------------------------------
+// ---- Groupings used by the dashboard and session summary -----------------
 
-export const REGIONS = ['Brust', 'Rücken', 'Schultern', 'Arme', 'Beine', 'Bauch'] as const
+export const REGIONS = ['Chest', 'Back', 'Shoulders', 'Arms', 'Legs', 'Core'] as const
 export type Region = (typeof REGIONS)[number]
 
 export const REGION_OF: Record<MuscleGroup, Region> = {
-  Brust: 'Brust',
-  Rücken: 'Rücken',
-  Schultern: 'Schultern',
-  Bizeps: 'Arme',
-  Trizeps: 'Arme',
-  Unterarme: 'Arme',
-  Bauch: 'Bauch',
-  Quadrizeps: 'Beine',
-  Beinbeuger: 'Beine',
-  Gesäß: 'Beine',
-  Waden: 'Beine',
+  Chest: 'Chest',
+  Back: 'Back',
+  Shoulders: 'Shoulders',
+  Biceps: 'Arms',
+  Triceps: 'Arms',
+  Forearms: 'Arms',
+  Abs: 'Core',
+  Quads: 'Legs',
+  Hamstrings: 'Legs',
+  Glutes: 'Legs',
+  Calves: 'Legs',
 }
 
-export type Movement = 'Drücken' | 'Ziehen' | 'Beine' | 'Core'
+export type Movement = 'Push' | 'Pull' | 'Legs' | 'Core'
 
 export const MOVEMENT_OF: Record<MuscleGroup, Movement> = {
-  Brust: 'Drücken',
-  Schultern: 'Drücken',
-  Trizeps: 'Drücken',
-  Rücken: 'Ziehen',
-  Bizeps: 'Ziehen',
-  Unterarme: 'Ziehen',
-  Quadrizeps: 'Beine',
-  Beinbeuger: 'Beine',
-  Gesäß: 'Beine',
-  Waden: 'Beine',
-  Bauch: 'Core',
+  Chest: 'Push',
+  Shoulders: 'Push',
+  Triceps: 'Push',
+  Back: 'Pull',
+  Biceps: 'Pull',
+  Forearms: 'Pull',
+  Quads: 'Legs',
+  Hamstrings: 'Legs',
+  Glutes: 'Legs',
+  Calves: 'Legs',
+  Abs: 'Core',
 }

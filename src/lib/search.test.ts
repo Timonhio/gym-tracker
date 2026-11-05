@@ -14,21 +14,21 @@ describe('catalog', () => {
 })
 
 describe('filterExercises', () => {
-  it('finds by name, ignoring case and umlauts', () => {
-    expect(filterExercises(BUILTIN_EXERCISES, 'bankdruecken', null).map((e) => e.id)).toContain('bankdruecken')
-    expect(filterExercises(BUILTIN_EXERCISES, 'BANKDRÜCKEN', null).map((e) => e.id)).toContain('bankdruecken')
-    expect(filterExercises(BUILTIN_EXERCISES, 'rumaenisches', null).map((e) => e.id)).toContain('rumaenisches-kreuzheben')
+  it('finds by name, ignoring case', () => {
+    expect(filterExercises(BUILTIN_EXERCISES, 'bench press', null).map((e) => e.id)).toContain('bench-press')
+    expect(filterExercises(BUILTIN_EXERCISES, 'BENCH PRESS', null).map((e) => e.id)).toContain('bench-press')
+    expect(filterExercises(BUILTIN_EXERCISES, 'romanian', null).map((e) => e.id)).toContain('romanian-deadlift')
   })
   it('requires all words to match', () => {
-    const r = filterExercises(BUILTIN_EXERCISES, 'rudern kabel', null)
-    expect(r.map((e) => e.id)).toEqual(['rudern-kabel'])
+    const r = filterExercises(BUILTIN_EXERCISES, 'row cable', null)
+    expect(r.map((e) => e.id)).toEqual(['seated-cable-row'])
   })
   it('filters by body part, primary muscle first', () => {
-    const r = filterExercises(BUILTIN_EXERCISES, '', 'Trizeps')
-    expect(r[0].primary).toBe('Trizeps')
-    expect(r.every((e) => e.primary === 'Trizeps' || e.secondary.includes('Trizeps'))).toBe(true)
-    const firstOther = r.findIndex((e) => e.primary !== 'Trizeps')
-    expect(r.slice(firstOther).every((e) => e.primary !== 'Trizeps')).toBe(true)
+    const r = filterExercises(BUILTIN_EXERCISES, '', 'Triceps')
+    expect(r[0].primary).toBe('Triceps')
+    expect(r.every((e) => e.primary === 'Triceps' || e.secondary.includes('Triceps'))).toBe(true)
+    const firstOther = r.findIndex((e) => e.primary !== 'Triceps')
+    expect(r.slice(firstOther).every((e) => e.primary !== 'Triceps')).toBe(true)
   })
   it('returns everything for empty query', () => {
     expect(filterExercises(BUILTIN_EXERCISES, '  ', null)).toHaveLength(BUILTIN_EXERCISES.length)
