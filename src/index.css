@@ -1,0 +1,93 @@
+@import 'tailwindcss';
+
+/* Dark mode is toggled with a "dark" class on <html> (see index.html + Settings). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+html {
+  -webkit-tap-highlight-color: transparent;
+  color-scheme: light;
+}
+html.dark {
+  color-scheme: dark;
+}
+
+body {
+  @apply bg-slate-100 text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100;
+  overscroll-behavior-y: none;
+}
+
+/* Number inputs: no spinners, we use the phone keypad. */
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+@utility card {
+  @apply rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-800;
+}
+@utility btn {
+  @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 text-base font-semibold transition-colors active:scale-[0.98] disabled:opacity-50;
+}
+@utility btn-primary {
+  @apply btn bg-emerald-600 text-white hover:bg-emerald-700 dark:bg-emerald-500 dark:text-slate-950 dark:hover:bg-emerald-400;
+}
+@utility btn-secondary {
+  @apply btn bg-slate-200 text-slate-900 hover:bg-slate-300 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700;
+}
+@utility btn-danger {
+  @apply btn bg-red-600 text-white hover:bg-red-700;
+}
+@utility btn-ghost {
+  @apply btn text-slate-600 hover:bg-slate-200 dark:text-slate-300 dark:hover:bg-slate-800;
+}
+@utility field {
+  @apply w-full rounded-xl border border-slate-300 bg-white px-3 text-base text-slate-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100;
+  min-height: 2.75rem;
+}
+/* Big number boxes for the set rows. */
+@utility num {
+  @apply h-14 w-full min-w-0 rounded-xl border border-slate-300 bg-slate-50 text-center text-xl font-semibold text-slate-900 outline-none focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-500/30 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:focus:bg-slate-900;
+}
+@utility chip {
+  @apply inline-flex min-h-9 shrink-0 items-center rounded-full bg-slate-200 px-3 text-sm font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300;
+}
+@utility chip-active {
+  /* important: must win against .chip's own colors regardless of CSS order */
+  @apply bg-emerald-600! text-white! dark:bg-emerald-500! dark:text-slate-950!;
+}
+@utility label {
+  @apply mb-1 block text-sm font-medium text-slate-600 dark:text-slate-400;
+}
+
+/* Chart tokens (validated reference palette, slots 1–2). Dark values are stepped for the dark surface. */
+:root {
+  --chart-surface: #ffffff;
+  --chart-text: #0b0b0b;
+  --chart-text-2: #52514e;
+  --chart-grid: #e7e5e0;
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --pr-ink: #b45309;
+}
+html.dark {
+  --chart-surface: #0f172a;
+  --chart-text: #f0efec;
+  --chart-text-2: #c3c2b7;
+  --chart-grid: #2a2f3a;
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --pr-ink: #fbbf24;
+}
+
+/* Horizontally scrolling chip rows: scrollable, but without a visible scrollbar. */
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
