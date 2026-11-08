@@ -1,29 +1,27 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { BodyWeightCard } from '../components/BodyWeightCard'
 import { AXIS, TOOLTIP } from '../components/chartStyle'
 import { PageHeader } from '../components/PageHeader'
 import { PhotosCard } from '../components/PhotosCard'
+import { StrengthProgress } from '../components/StrengthProgress'
+import { TrainingCalendar } from '../components/TrainingCalendar'
 import { useData } from '../db/DataProvider'
-import { WEEKDAYS_SHORT, formatDate, formatShortDate } from '../lib/dates'
-import { formatNumber, formatVolume, formatWeight, plural, prLabel, repsUnit } from '../lib/format'
+import { WEEKDAYS_SHORT, formatShortDate } from '../lib/dates'
+import { formatWeight, plural, prLabel, repsUnit } from '../lib/format'
 import { balanceInsights, favoriteWeekday, neglectInsights, volumeInsight, type Insight } from '../lib/insights'
 import { currentPRs } from '../lib/pr'
 import {
   RANGES,
-  countValidSets,
-  exerciseProgress,
   exerciseRanking,
   inRange,
   latestPRs,
   movementBalance,
-  rangeStart,
   regionRecency,
   setsByMuscle,
   volumeTrend,
   weekdayCounts,
-  weeklyStreak,
   workoutsPerWeek,
   type RangeKey,
 } from '../lib/stats'
@@ -42,16 +40,6 @@ function Section({ title, subtitle, children }: { title: string; subtitle?: stri
   )
 }
 
-function Tile({ label, value, hint }: { label: string; value: string; hint?: string }) {
-  return (
-    <div className="card !rounded-[1.75rem] !p-4">
-      <p className="eyebrow mb-2">{label}</p>
-      <p className="text-3xl leading-none font-bold tracking-tight tabular-nums">{value}</p>
-      {hint && <p className="mt-2 text-xs text-slate-500">{hint}</p>}
-    </div>
-  )
-}
-
 /** Insights are plain text rows; only a thin left rule hints at the level. */
 const LEVEL_RULE: Record<Insight['level'], string> = {
   warn: 'border-[var(--accent-solid)]',
@@ -64,12 +52,9 @@ const LEVEL_RULE: Record<Insight['level'], string> = {
 export default function DashboardPage() {
   const { workouts, lookup, isBodyweight, setPRs } = useData()
   const [range, setRange] = useState<RangeKey>('3m')
-  const [exerciseId, setExerciseId] = useState<string>('')
   const now = useMemo(() => new Date(), [])
 
   const inR = useMemo(() => inRange(workouts, range, now), [workouts, range, now])
-  const sets = useMemo(() => inR.reduce((n, w) => n + countValidSets(w, isBodyweight), 0), [inR, isBodyweight])
-  const streak = useMemo(() => weeklyStreak(workouts, now), [workouts, now])
   const trend = useMemo(() => volumeTrend(workouts, range, now, isBodyweight), [workouts, range, now, isBodyweight])
   const weeks = useMemo(() => workoutsPerWeek(workouts, range, now), [workouts, range, now])
   const ranking = useMemo(() => exerciseRanking(inR, lookup), [inR, lookup])
@@ -88,22 +73,8 @@ export default function DashboardPage() {
     return out
   }, [recency, workouts.length, balance, trend, weekdays])
 
-  // exercises that have data -> picker for the progress chart
+  // exercises that have data (for the PR table)
   const trained = useMemo(() => exerciseRanking(workouts, lookup), [workouts, lookup])
-  useEffect(() => {
-    if (trained.length > 0 && !trained.some((t) => t.exerciseId === exerciseId)) setExerciseId(trained[0].exerciseId)
-  }, [trained, exerciseId])
-
-  const selected = exerciseId ? lookup(exerciseId) : null
-  const progress = useMemo(() => {
-    if (!selected) return []
-    const start = rangeStart(range, now)
-    return exerciseProgress(workouts, selected.id, selected.bodyweight, setPRs)
-      .filter((p) => start === null || p.date >= start)
-      .map((p) => ({ ...p, e1rm: p.e1rm === null ? null : Math.round(p.e1rm * 10) / 10 }))
-  }, [selected, workouts, setPRs, range, now])
-  const hasWeights = progress.some((p) => p.topWeight !== null)
-  const hasBwReps = progress.some((p) => p.maxBodyweightReps !== null)
 
   const allPRs = useMemo(
     () =>
@@ -114,7 +85,6 @@ export default function DashboardPage() {
     [trained, workouts, lookup],
   )
 
-  const perWeek = weeks.length ? inR.length / weeks.length : 0
   const maxMuscle = Math.max(1, ...muscles.map((m) => m.sets))
   const maxRank = Math.max(1, ...ranking.map((r) => r.workouts))
   const hasWorkouts = workouts.length > 0
@@ -147,24 +117,7 @@ export default function DashboardPage() {
 
         {hasWorkouts && (
           <>
-            <div className="grid grid-cols-2 gap-3">
-              <Tile label="Workouts" value={String(inR.length)} hint={`${formatNumber(Math.round(perWeek * 10) / 10)} per week on average`} />
-              <Tile
-                label="Streak"
-                value={plural(streak.current, 'week', 'weeks')}
-                hint={`Best: ${streak.longest} · at least 1 workout per week`}
-              />
-              <Tile
-                label="Volume"
-                value={formatVolume(trend.current)}
-                hint={
-                  trend.changePct === null
-                    ? 'Sets × reps × kg'
-                    : `${trend.changePct >= 0 ? '▲ +' : '▼ '}${formatNumber(Math.round(trend.changePct))}% vs. previous period`
-                }
-              />
-              <Tile label="Sets" value={formatNumber(sets)} hint={inR.length ? `${formatNumber(Math.round((sets / inR.length) * 10) / 10)} per workout` : undefined} />
-            </div>
+            <TrainingCalendar range={range} now={now} />
 
             <Section title="Workouts per week" subtitle="Calendar weeks, Monday to Sunday">
               <div className="h-52" role="img" aria-label="Bar chart: workouts per week">
@@ -227,109 +180,7 @@ export default function DashboardPage() {
               </Section>
             )}
 
-            <Section title="Strength progress" subtitle="Top weight and estimated 1RM (Epley) per workout · ring = PR">
-              {selected && (
-                <>
-                  <label className="sr-only" htmlFor="progress-exercise">Exercise</label>
-                  <select id="progress-exercise" className="field" value={exerciseId} onChange={(e) => setExerciseId(e.target.value)}>
-                    {trained.map((t) => (
-                      <option key={t.exerciseId} value={t.exerciseId}>
-                        {t.name} ({t.workouts}×)
-                      </option>
-                    ))}
-                  </select>
-                  {progress.length === 0 ? (
-                    <p className="py-8 text-center text-slate-500">No workout with this exercise in this period.</p>
-                  ) : (
-                    <>
-                      <div className="h-64" role="img" aria-label={`Line chart: progress for ${selected.name}`}>
-                        <ResponsiveContainer width="100%" height="100%">
-                          <LineChart data={progress} margin={{ top: 16, right: 12, bottom: 0, left: -12 }}>
-                            <CartesianGrid vertical={false} stroke="var(--chart-grid)" />
-                            <XAxis dataKey="date" tickFormatter={formatShortDate} tick={AXIS} tickLine={false} axisLine={false} minTickGap={24} />
-                            <YAxis
-                              tick={AXIS}
-                              tickLine={false}
-                              axisLine={false}
-                              domain={[(min: number) => Math.max(0, Math.floor(min * 0.9)), (max: number) => Math.ceil(max * 1.05)]}
-                            />
-                            <Tooltip
-                              {...TOOLTIP}
-                              cursor={{ stroke: 'var(--chart-grid)' }}
-                              labelFormatter={(l) => formatDate(String(l))}
-                              formatter={(v, name) => [name === 'Reps' ? `${v} ${repsUnit(selected)}` : formatWeight(Number(v)), name]}
-                            />
-                            <Legend wrapperStyle={{ color: 'var(--chart-text-2)', fontSize: 13 }} />
-                            {hasWeights && (
-                              <Line
-                                type="linear"
-                                dataKey="topWeight"
-                                name="Top weight"
-                                stroke="var(--series-1)"
-                                strokeWidth={2.5}
-                                connectNulls
-                                dot={<PRDot color="var(--series-1)" />}
-                                activeDot={{ r: 6, stroke: 'var(--chart-surface)', strokeWidth: 2 }}
-                              />
-                            )}
-                            {hasWeights && (
-                              <Line
-                                type="linear"
-                                dataKey="e1rm"
-                                name="Estimated 1RM"
-                                stroke="var(--series-2)"
-                                strokeWidth={2}
-                                strokeDasharray="6 4"
-                                connectNulls
-                                dot={{ r: 2.5, fill: 'var(--series-2)', strokeWidth: 0 }}
-                                activeDot={{ r: 6, stroke: 'var(--chart-surface)', strokeWidth: 2 }}
-                              />
-                            )}
-                            {hasBwReps && (
-                              <Line
-                                type="linear"
-                                dataKey="maxBodyweightReps"
-                                name="Reps"
-                                stroke="var(--series-1)"
-                                strokeWidth={2.5}
-                                connectNulls
-                                dot={<PRDot color="var(--series-1)" />}
-                                activeDot={{ r: 6, stroke: 'var(--chart-surface)', strokeWidth: 2 }}
-                              />
-                            )}
-                          </LineChart>
-                        </ResponsiveContainer>
-                      </div>
-                      <details className="text-sm">
-                        <summary className="cursor-pointer list-none text-slate-500">Show as table ▾</summary>
-                        <table className="mt-2 w-full text-left">
-                          <thead className="text-slate-500">
-                            <tr>
-                              <th className="py-1 font-medium">Date</th>
-                              <th className="font-medium">Top weight</th>
-                              <th className="font-medium">1RM</th>
-                              <th className="font-medium">Max reps (no added weight)</th>
-                              <th />
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {[...progress].reverse().map((p) => (
-                              <tr key={p.workoutId} className="border-t border-black/5 dark:border-white/[0.06]">
-                                <td className="py-1.5">{formatShortDate(p.date)}</td>
-                                <td>{p.topWeight ? formatWeight(p.topWeight) : '–'}</td>
-                                <td>{p.e1rm ? formatWeight(p.e1rm) : '–'}</td>
-                                <td>{p.maxBodyweightReps ?? '–'}</td>
-                                <td>{p.isPR ? '🏆' : ''}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </details>
-                    </>
-                  )}
-                </>
-              )}
-            </Section>
+            <StrengthProgress range={range} now={now} />
 
             <Section title="Muscles trained" subtitle="Sets by primary muscle group">
               {muscles.length === 0 ? (
@@ -419,12 +270,4 @@ export default function DashboardPage() {
       </div>
     </div>
   )
-}
-
-/** Line dot: a small filled point, or a hollow ring when that workout contained a PR. */
-function PRDot(props: { cx?: number; cy?: number; payload?: { isPR?: boolean }; color: string }) {
-  const { cx, cy, payload, color } = props
-  if (cx === undefined || cy === undefined) return <g />
-  if (!payload?.isPR) return <circle cx={cx} cy={cy} r={2.5} fill={color} />
-  return <circle cx={cx} cy={cy} r={5.5} fill="var(--chart-surface)" stroke={color} strokeWidth={2.5} />
 }

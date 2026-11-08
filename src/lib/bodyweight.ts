@@ -1,3 +1,4 @@
+import { addDays, diffDays, parseISODate, toISODate } from './dates'
 import { rangeStart, type RangeKey } from './stats'
 import type { BodyWeightEntry } from './types'
 
@@ -44,6 +45,28 @@ export function niceWeightTicks(min: number, max: number): number[] {
   const ticks: number[] = []
   for (let t = lo; t <= hi + 1e-9; t += step) ticks.push(t)
   return ticks
+}
+
+/**
+ * Time axis for the body-weight chart: from the start of the range (or the first
+ * measurement for "All") up to today, at least one week wide, with a few tick
+ * marks that always fall on whole days. Values are local-midnight timestamps.
+ */
+export function bodyWeightAxis(
+  points: BodyWeightEntry[],
+  range: RangeKey,
+  now: Date,
+  maxTicks = 4,
+): { domain: [number, number]; ticks: number[] } {
+  const end = parseISODate(toISODate(now))
+  const startISO = rangeStart(range, now) ?? points[0]?.date ?? toISODate(now)
+  let first = parseISODate(startISO)
+  if (diffDays(first, end) < 6) first = addDays(end, -6)
+  const days = diffDays(first, end)
+  const count = Math.min(maxTicks, days + 1)
+  const ticks = new Set<number>()
+  for (let i = 0; i < count; i++) ticks.add(addDays(first, Math.round((i * days) / Math.max(1, count - 1))).getTime())
+  return { domain: [first.getTime(), end.getTime()], ticks: [...ticks] }
 }
 
 /** Accepts "82,4" or "82.4"; returns kg or null if not a plausible human weight. */

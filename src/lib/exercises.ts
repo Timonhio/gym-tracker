@@ -50,7 +50,15 @@ export const BUILTIN_EXERCISES: Exercise[] = [
   ex('face-pulls', 'Face Pulls', 'Shoulders', ['Back'], 'Cable'),
   ex('reverse-fly', 'Reverse Fly', 'Shoulders', ['Back'], 'Machine'),
   ex('upright-row', 'Upright Row', 'Shoulders', ['Biceps'], 'Barbell'),
-  ex('shrugs', 'Shrugs', 'Shoulders', ['Back', 'Forearms'], 'Dumbbell'),
+
+  // Traps – shrugs count for the traps only (not for back or shoulders)
+  ex('shrugs', 'Dumbbell Shrugs', 'Traps', ['Forearms'], 'Dumbbell'),
+  ex('barbell-shrugs', 'Barbell Shrugs', 'Traps', ['Forearms'], 'Barbell'),
+  ex('cable-shrugs', 'Cable Shrugs', 'Traps', ['Forearms'], 'Cable'),
+
+  // Neck – counts for the neck only
+  ex('neck-flexion', 'Neck Flexion', 'Neck', [], 'Other'),
+  ex('neck-extension', 'Neck Extension', 'Neck', [], 'Other'),
 
   // Biceps
   ex('dumbbell-curl', 'Dumbbell Curl', 'Biceps', ['Forearms'], 'Dumbbell'),
@@ -126,13 +134,15 @@ export function makeLookup(catalog: Exercise[]) {
 
 // ---- Groupings used by the dashboard and session summary -----------------
 
-export const REGIONS = ['Chest', 'Back', 'Shoulders', 'Arms', 'Legs', 'Core'] as const
+export const REGIONS = ['Chest', 'Back', 'Traps', 'Shoulders', 'Neck', 'Arms', 'Legs', 'Core'] as const
 export type Region = (typeof REGIONS)[number]
 
 export const REGION_OF: Record<MuscleGroup, Region> = {
   Chest: 'Chest',
   Back: 'Back',
+  Traps: 'Traps',
   Shoulders: 'Shoulders',
+  Neck: 'Neck',
   Biceps: 'Arms',
   Triceps: 'Arms',
   Forearms: 'Arms',
@@ -145,10 +155,13 @@ export const REGION_OF: Record<MuscleGroup, Region> = {
 
 export type Movement = 'Push' | 'Pull' | 'Legs' | 'Core'
 
-export const MOVEMENT_OF: Record<MuscleGroup, Movement> = {
+/** null = not part of the push/pull balance (the neck). */
+export const MOVEMENT_OF: Record<MuscleGroup, Movement | null> = {
   Chest: 'Push',
   Shoulders: 'Push',
   Triceps: 'Push',
+  Neck: null,
+  Traps: 'Pull',
   Back: 'Pull',
   Biceps: 'Pull',
   Forearms: 'Pull',

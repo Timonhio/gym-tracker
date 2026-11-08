@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { bodyWeightChange, bodyWeightsInRange, latestBodyWeight, niceWeightTicks, parseBodyWeight, sortBodyWeights } from './bodyweight'
+import {
+  bodyWeightAxis,
+  bodyWeightChange,
+  bodyWeightsInRange,
+  latestBodyWeight,
+  niceWeightTicks,
+  parseBodyWeight,
+  sortBodyWeights,
+} from './bodyweight'
 import type { BodyWeightEntry } from './types'
 
 const NOW = new Date(2026, 2, 11, 12) // 11 Mar 2026
@@ -48,5 +56,29 @@ describe('body weight helpers', () => {
     expect(parseBodyWeight('abc')).toBeNull()
     expect(parseBodyWeight('5')).toBeNull()
     expect(parseBodyWeight('900')).toBeNull()
+  })
+})
+
+describe('bodyWeightAxis', () => {
+  const day = (iso: string) => new Date(Number(iso.slice(0, 4)), Number(iso.slice(5, 7)) - 1, Number(iso.slice(8, 10))).getTime()
+
+  it('spans the whole range up to today, with ticks on whole days', () => {
+    const { domain, ticks } = bodyWeightAxis([], '4w', NOW) // 4w from 11 Mar 2026 = 12 Feb
+    expect(domain).toEqual([day('2026-02-12'), day('2026-03-11')])
+    expect(ticks[0]).toBe(domain[0])
+    expect(ticks[ticks.length - 1]).toBe(domain[1])
+    expect(ticks).toHaveLength(4)
+    for (const t of ticks) expect(new Date(t).getHours()).toBe(0)
+  })
+
+  it('"All" starts at the first measurement', () => {
+    const { domain } = bodyWeightAxis([bw('2025-12-01', 84), bw('2026-03-01', 81)], 'all', NOW)
+    expect(domain[0]).toBe(day('2025-12-01'))
+  })
+
+  it('is at least a week wide so a single measurement does not collapse the chart', () => {
+    const { domain, ticks } = bodyWeightAxis([bw('2026-03-11', 81)], 'all', NOW)
+    expect(domain[1] - domain[0]).toBe(6 * 86_400_000)
+    expect(new Set(ticks).size).toBe(ticks.length)
   })
 })

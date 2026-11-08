@@ -27,7 +27,7 @@ export default function App() {
               <Route
                 path="dashboard"
                 element={
-                  <Suspense fallback={<p className="py-10 text-center text-slate-500">Lade …</p>}>
+                  <Suspense fallback={<p className="py-10 text-center text-slate-500">Loading …</p>}>
                     <DashboardPage />
                   </Suspense>
                 }

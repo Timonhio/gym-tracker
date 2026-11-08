@@ -11,10 +11,14 @@ export interface Insight {
 /** Days without training before a body region counts as neglected. */
 export const NEGLECT_DAYS = 7
 
+/** Small add-on regions that are trained now and then; no nagging about them. */
+const NEGLECT_EXEMPT: string[] = ['Traps', 'Neck']
+
 /** "Legs not trained for 12 days" – up to 3, longest pause first. */
 export function neglectInsights(recency: RegionRecency[], hasAnyWorkout: boolean): Insight[] {
   if (!hasAnyWorkout) return []
   const stale = recency
+    .filter((r) => !NEGLECT_EXEMPT.includes(r.region))
     .filter((r) => r.days === null || r.days >= NEGLECT_DAYS)
     .sort((a, b) => (b.days ?? Infinity) - (a.days ?? Infinity))
     .slice(0, 3)

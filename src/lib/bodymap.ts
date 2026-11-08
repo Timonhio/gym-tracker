@@ -6,8 +6,10 @@ type LibMuscle = IExerciseData['muscles'][number]
 /** Our muscle groups -> the shapes of the body model (react-body-highlighter). */
 export const LIB_MUSCLES: Record<MuscleGroup, LibMuscle[]> = {
   Chest: ['chest'],
-  Back: ['trapezius', 'upper-back', 'lower-back'],
+  Back: ['upper-back', 'lower-back'],
+  Traps: ['trapezius'],
   Shoulders: ['front-deltoids', 'back-deltoids'],
+  Neck: ['neck'],
   Biceps: ['biceps'],
   Triceps: ['triceps'],
   Forearms: ['forearm'],

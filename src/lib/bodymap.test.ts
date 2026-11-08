@@ -19,9 +19,15 @@ describe('bodyMapData', () => {
     ])
   })
 
-  it('lights up every shape of a group (abs include obliques, back has three parts)', () => {
+  it('lights up every shape of a group (abs include obliques, back has two parts)', () => {
     expect(bodyMapData(['Abs'], [])[0].muscles).toEqual(['abs', 'obliques'])
-    expect(bodyMapData(['Back'], [])[0].muscles).toEqual(['trapezius', 'upper-back', 'lower-back'])
+    expect(bodyMapData(['Back'], [])[0].muscles).toEqual(['upper-back', 'lower-back'])
+  })
+
+  it('keeps traps and neck apart from the back', () => {
+    expect(bodyMapData(['Traps'], [])[0].muscles).toEqual(['trapezius'])
+    expect(bodyMapData(['Neck'], [])[0].muscles).toEqual(['neck'])
+    expect(bodyMapData(['Back'], [])[0].muscles).not.toContain('trapezius')
   })
 
   it('never shows a primary shape as merely assisting', () => {

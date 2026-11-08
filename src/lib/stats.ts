@@ -211,7 +211,10 @@ export interface MovementBalance {
 /** Sets by movement pattern (push / pull / legs / core), via the primary muscle. */
 export function movementBalance(workouts: Workout[], lookup: Lookup): MovementBalance {
   const counts: Record<Movement, number> = { Push: 0, Pull: 0, Legs: 0, Core: 0 }
-  for (const { muscle, sets } of setsByMuscle(workouts, lookup)) counts[MOVEMENT_OF[muscle]] += sets
+  for (const { muscle, sets } of setsByMuscle(workouts, lookup)) {
+    const movement = MOVEMENT_OF[muscle]
+    if (movement) counts[movement] += sets
+  }
   return { counts, pushPullRatio: counts.Pull > 0 ? counts.Push / counts.Pull : null }
 }
 
@@ -258,6 +261,62 @@ export function exerciseProgress(
     if (valid) points.push({ date: w.date, workoutId: w.id, topWeight, e1rm, maxBodyweightReps: maxBw, isPR })
   }
   return points
+}
+
+export interface TopSetChange {
+  direction: 'up' | 'down' | 'same'
+  /** kg, this session minus the previous one */
+  weightDelta: number
+  /** reps, this session minus the previous one */
+  repsDelta: number
+}
+
+/** The best set of one exercise in one workout: heaviest weight, then most reps at that weight. */
+export interface TopSet {
+  date: string
+  workoutId: string
+  /** Heaviest weight of the session. 0 = no added weight (bodyweight / timed exercises). */
+  weight: number
+  /** Most reps (or seconds) at that weight. */
+  reps: number
+  /** The workout contained a PR for this exercise. */
+  isPR: boolean
+  /** Compared with the previous workout that had this exercise; null for the first one. */
+  change: TopSetChange | null
+}
+
+const round2 = (n: number) => Math.round(n * 100) / 100
+
+/**
+ * One top set per workout for one exercise (chronological), so that sessions can
+ * be compared directly: first by weight, at the same weight by reps.
+ */
+export function exerciseTopSets(workouts: Workout[], exerciseId: string, bodyweight: boolean, setPRs: SetPRMap): TopSet[] {
+  const out: TopSet[] = []
+  for (const w of [...workouts].sort(compareWorkouts)) {
+    const entry = w.entries.find((e) => e.exerciseId === exerciseId)
+    if (!entry) continue
+    let best: { weight: number; reps: number } | null = null
+    let isPR = false
+    for (const s of entry.sets) {
+      if (!isValidSet(s, bodyweight)) continue
+      const weight = s.weight ?? 0
+      const reps = s.reps as number
+      if (!best || weight > best.weight || (weight === best.weight && reps > best.reps)) best = { weight, reps }
+      if ((setPRs.get(setKey(w.id, s.id))?.length ?? 0) > 0) isPR = true
+    }
+    if (!best) continue
+    const prev = out[out.length - 1]
+    let change: TopSetChange | null = null
+    if (prev) {
+      const weightDelta = round2(best.weight - prev.weight)
+      const repsDelta = best.reps - prev.reps
+      const direction = weightDelta > 0 || (weightDelta === 0 && repsDelta > 0) ? 'up' : weightDelta < 0 || repsDelta < 0 ? 'down' : 'same'
+      change = { direction, weightDelta, repsDelta }
+    }
+    out.push({ date: w.date, workoutId: w.id, weight: best.weight, reps: best.reps, isPR, change })
+  }
+  return out
 }
 
 export interface LatestPR {

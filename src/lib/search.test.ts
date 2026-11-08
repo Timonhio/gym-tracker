@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { BUILTIN_EXERCISES } from './exercises'
 import { filterExercises, normalize } from './search'
+import { MUSCLE_GROUPS } from './types'
 
 describe('catalog', () => {
   it('has about 50 built-in exercises with unique ids', () => {
@@ -9,7 +10,7 @@ describe('catalog', () => {
   })
   it('covers every muscle group as primary', () => {
     const primaries = new Set(BUILTIN_EXERCISES.map((e) => e.primary))
-    expect(primaries.size).toBe(11)
+    expect([...primaries].sort()).toEqual([...MUSCLE_GROUPS].sort())
   })
 })
 

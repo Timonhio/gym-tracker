@@ -48,6 +48,23 @@ export function formatSets(sets: SetEntry[], ex: Exercise): string {
     .join(' · ')
 }
 
+/** Top set of a session: "80 kg × 8", or "12 reps" when no weight was added. */
+export function formatTopSet(t: { weight: number; reps: number }, ex: Pick<Exercise, 'timed'>): string {
+  return t.weight > 0 ? `${formatWeight(t.weight)} × ${t.reps}` : `${t.reps} ${repsUnit(ex)}`
+}
+
+/** Change to the previous session: "+2.5 kg", "−1 rep", "+2.5 kg · −2 reps"; "=" if identical. */
+export function formatTopSetChange(c: { weightDelta: number; repsDelta: number }, ex: Pick<Exercise, 'timed'>): string {
+  const sign = (n: number) => (n > 0 ? '+' : '−')
+  const parts: string[] = []
+  if (c.weightDelta !== 0) parts.push(`${sign(c.weightDelta)}${formatNumber(Math.abs(c.weightDelta))} kg`)
+  if (c.repsDelta !== 0) {
+    const unit = ex.timed ? 'sec' : Math.abs(c.repsDelta) === 1 ? 'rep' : 'reps'
+    parts.push(`${sign(c.repsDelta)}${formatNumber(Math.abs(c.repsDelta))} ${unit}`)
+  }
+  return parts.length ? parts.join(' · ') : '='
+}
+
 export function prLabel(type: PRType): string {
   switch (type) {
     case 'weight':

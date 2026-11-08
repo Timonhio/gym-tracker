@@ -1,9 +1,17 @@
 import { useMemo, useState } from 'react'
-import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { deleteBodyWeight, saveBodyWeight } from '../db/actions'
 import { useData } from '../db/DataProvider'
-import { bodyWeightChange, bodyWeightsInRange, latestBodyWeight, niceWeightTicks, parseBodyWeight, sortBodyWeights } from '../lib/bodyweight'
-import { diffDays, formatDate, formatShortDate, parseISODate, todayISO } from '../lib/dates'
+import {
+  bodyWeightAxis,
+  bodyWeightChange,
+  bodyWeightsInRange,
+  latestBodyWeight,
+  niceWeightTicks,
+  parseBodyWeight,
+  sortBodyWeights,
+} from '../lib/bodyweight'
+import { diffDays, formatDate, formatShortDate, parseISODate, todayISO, toISODate } from '../lib/dates'
 import { formatNumber } from '../lib/format'
 import type { RangeKey } from '../lib/stats'
 import { AXIS, TOOLTIP } from './chartStyle'
@@ -23,18 +31,24 @@ export function BodyWeightCard({ range, now }: { range: RangeKey; now: Date }) {
   const toast = useToast()
   const [text, setText] = useState('')
   const [date, setDate] = useState(todayISO())
+  const [logging, setLogging] = useState(false)
 
   const latest = useMemo(() => latestBodyWeight(bodyWeights), [bodyWeights])
   const change = useMemo(() => bodyWeightChange(bodyWeights, range, now), [bodyWeights, range, now])
   const points = useMemo(() => bodyWeightsInRange(bodyWeights, range, now), [bodyWeights, range, now])
   const all = useMemo(() => sortBodyWeights(bodyWeights).reverse(), [bodyWeights])
   const ticks = useMemo(() => (points.length ? niceWeightTicks(Math.min(...points.map((p) => p.kg)), Math.max(...points.map((p) => p.kg))) : []), [points])
+  const axis = useMemo(() => bodyWeightAxis(points, range, now), [points, range, now])
+  const data = useMemo(() => points.map((p) => ({ ...p, t: parseISODate(p.date).getTime() })), [points])
+  const lowest = points.length ? Math.min(...points.map((p) => p.kg)) : null
+  const highest = points.length ? Math.max(...points.map((p) => p.kg)) : null
 
   async function log() {
     const kg = parseBodyWeight(text)
     if (kg === null) return toast('Enter a weight between 20 and 400 kg.', 'error')
     await saveBodyWeight(date, kg)
     setText('')
+    setLogging(false)
     toast(`Logged ${formatNumber(kg)} kg.`)
   }
 
@@ -62,56 +76,104 @@ export function BodyWeightCard({ range, now }: { range: RangeKey; now: Date }) {
         )}
       </div>
 
-      {points.length >= 2 && (
-        <div className="h-40" role="img" aria-label="Line chart: body weight over time">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={points} margin={{ top: 8, right: 8, bottom: 0, left: -22 }}>
-              <CartesianGrid vertical={false} stroke="var(--chart-grid)" />
-              <XAxis dataKey="date" tickFormatter={formatShortDate} tick={AXIS} tickLine={false} axisLine={false} minTickGap={32} />
-              <YAxis tick={AXIS} tickLine={false} axisLine={false} ticks={ticks} domain={[ticks[0], ticks[ticks.length - 1]]} />
-              <Tooltip
-                {...TOOLTIP}
-                cursor={{ stroke: 'var(--chart-grid)' }}
-                labelFormatter={(l) => formatDate(String(l))}
-                formatter={(v) => [`${formatNumber(Number(v))} kg`, 'Weight']}
-              />
-              <Line
-                type="linear"
-                dataKey="kg"
-                name="Weight"
-                stroke="var(--series-1)"
-                strokeWidth={2.5}
-                dot={{ r: 3, fill: 'var(--series-1)', strokeWidth: 0 }}
-                activeDot={{ r: 6, stroke: 'var(--chart-surface)', strokeWidth: 2 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
+      {points.length > 0 ? (
+        <>
+          <div className="h-56" role="img" aria-label="Chart: body weight over time">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={data} margin={{ top: 10, right: 14, bottom: 0, left: -18 }}>
+                <defs>
+                  <linearGradient id="bw-fill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="var(--series-1)" stopOpacity={0.35} />
+                    <stop offset="100%" stopColor="var(--series-1)" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid vertical={false} stroke="var(--chart-grid)" />
+                <XAxis
+                  dataKey="t"
+                  type="number"
+                  scale="time"
+                  domain={axis.domain}
+                  ticks={axis.ticks}
+                  tickFormatter={(t) => formatShortDate(toISODate(new Date(Number(t))))}
+                  tick={AXIS}
+                  tickLine={false}
+                  axisLine={false}
+                  padding={{ left: 6, right: 6 }}
+                />
+                <YAxis tick={AXIS} tickLine={false} axisLine={false} ticks={ticks} domain={[ticks[0], ticks[ticks.length - 1]]} />
+                <Tooltip
+                  {...TOOLTIP}
+                  cursor={{ stroke: 'var(--chart-grid)' }}
+                  labelFormatter={(t) => formatDate(toISODate(new Date(Number(t))))}
+                  formatter={(v) => [`${formatNumber(Number(v))} kg`, 'Weight']}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="kg"
+                  name="Weight"
+                  stroke="var(--series-1)"
+                  strokeWidth={2.5}
+                  fill="url(#bw-fill)"
+                  dot={{ r: 3.5, fill: 'var(--series-1)', stroke: 'var(--chart-surface)', strokeWidth: 1.5 }}
+                  activeDot={{ r: 6, stroke: 'var(--chart-surface)', strokeWidth: 2 }}
+                  isAnimationActive={false}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+          {points.length >= 2 && lowest !== null && highest !== null && (
+            <dl className="grid grid-cols-3 gap-3 text-center text-sm">
+              {[
+                ['Lowest', lowest],
+                ['Average', points.reduce((sum, p) => sum + p.kg, 0) / points.length],
+                ['Highest', highest],
+              ].map(([label, kg]) => (
+                <div key={label as string} className="inset !p-3">
+                  <dt className="eyebrow mb-1">{label}</dt>
+                  <dd className="font-semibold tabular-nums">{formatNumber(Math.round(Number(kg) * 10) / 10)} kg</dd>
+                </div>
+              ))}
+            </dl>
+          )}
+        </>
+      ) : (
+        latest && <p className="text-sm text-slate-500">No measurements in this period. Pick a longer range to see your trend.</p>
       )}
-      {latest && points.length < 2 && <p className="text-sm text-slate-500">Log at least two measurements in this period to see a trend.</p>}
 
-      <form
-        className="space-y-2"
-        onSubmit={(e) => {
-          e.preventDefault()
-          void log()
-        }}
-      >
-        <div className="grid grid-cols-2 gap-2">
-          <input
-            className="field"
-            inputMode="decimal"
-            placeholder="Weight (kg)"
-            aria-label="Body weight in kg"
-            value={text}
-            onChange={(e) => setText(e.target.value.replace(/[^\d.,]/g, ''))}
-          />
-          <input className="field" type="date" aria-label="Date of measurement" value={date} max={todayISO()} onChange={(e) => e.target.value && setDate(e.target.value)} />
-        </div>
-        <button type="submit" className="btn-secondary w-full" disabled={!text}>
+      {logging ? (
+        <form
+          className="space-y-2"
+          onSubmit={(e) => {
+            e.preventDefault()
+            void log()
+          }}
+        >
+          <div className="grid grid-cols-2 gap-2">
+            <input
+              className="field"
+              inputMode="decimal"
+              placeholder="Weight (kg)"
+              aria-label="Body weight in kg"
+              autoFocus
+              value={text}
+              onChange={(e) => setText(e.target.value.replace(/[^\d.,]/g, ''))}
+            />
+            <input className="field" type="date" aria-label="Date of measurement" value={date} max={todayISO()} onChange={(e) => e.target.value && setDate(e.target.value)} />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <button type="button" className="btn-ghost" onClick={() => setLogging(false)}>
+              Cancel
+            </button>
+            <button type="submit" className="btn-primary" disabled={!text}>
+              Save
+            </button>
+          </div>
+        </form>
+      ) : (
+        <button className="btn-secondary w-full" onClick={() => setLogging(true)}>
           Log weight
         </button>
-      </form>
+      )}
 
       {all.length > 0 && (
         <details className="text-sm">
